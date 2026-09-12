@@ -108,10 +108,11 @@ comparison report are experiment ground truth, separate from the collector's
 evidence. Keep those labels out of future model inputs.
 
 This is a demonstrated **single-test assertion gap**, not a claim that the full
-upstream suite misses the defect. No AI model was used to identify the row loss;
-the next stage is to investigate this evidence with TypeSafe and the critic /
-evidence-retrieval loop. The two timings are individual pytest durations, not a
-performance comparison.
+upstream suite misses the defect. The mutation harness identifies row loss
+deterministically. A separate [live TypeSafe investigation](../../docs/experiments/linkding-typesafe.md)
+now also identifies the regression through critic-selected evidence retrieval,
+without receiving experiment labels. The two pytest timings are individual
+durations, not a performance comparison.
 
 Sources: [upstream test](https://github.com/sissbruecker/linkding/blob/eb98e67d942436b8ad0207dae5fd99a268463a0b/bookmarks/tests_e2e/e2e_test_bookmark_page_partial_updates.py#L101-L110),
 [browser helper](https://github.com/sissbruecker/linkding/blob/eb98e67d942436b8ad0207dae5fd99a268463a0b/bookmarks/tests_e2e/helpers.py),

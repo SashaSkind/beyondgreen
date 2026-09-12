@@ -29,14 +29,15 @@ The check uploads one synthetic connection trace, reads it back, and prints its
 URL. It makes no model calls and uploads no application evidence. `.env` is
 ignored by Git; keep API keys there or in your environment.
 
-Run `npm run check` to type-check the script.
+Run `npm run check` to type-check the project and `npm test` for local tests.
 
 Reference: [Weave quickstart](https://docs.wandb.ai/weave/quickstart).
 
 ## Model connections
 
-Set `TYPESAFE_API_KEY` in `.env`. The TypeSafe model defaults to `jev-latest`;
-set `TYPESAFE_MODEL` to select a specific available version.
+Set `TYPESAFE_API_KEY` in `.env`. The investigator defaults to `jev-1.13.0`;
+set `TYPESAFE_MODEL` to override it. The standalone connection probe defaults
+to `jev-latest` when that environment variable is absent.
 
 The comparison model defaults to `deepseek-ai/DeepSeek-V4-Pro-0813` through
 W&B Inference, using the existing `WANDB_API_KEY`. Set
@@ -51,3 +52,37 @@ or performance benchmark, and it does not send traces to Weave.
 
 References: [TypeSafe HTTP API](https://docs.typesafe.ai/api.md),
 [W&B chat completions](https://docs.wandb.ai/inference/api-reference/chat-completions).
+
+## Investigate a passing Linkding test
+
+After capturing the clean/mutant pair, pass their printed artifact directories:
+
+```sh
+npm run investigate -- --run <current-run-directory> --baseline <clean-run-directory>
+```
+
+This makes billable TypeSafe calls and sends normalized synthetic test evidence
+and role trajectories to your Weave project. A Scout proposes a typed
+hypothesis; a Critic chooses missing evidence; the Investigator revises its
+hypothesis; a separate Verifier checks the final conclusion. The model chooses
+retrievals from database state, a pinned archive contract, and a validated
+known-good run. Both database state and contract are required before a verdict.
+
+The command prints each decision and writes a complete JSON receipt under
+`.scratch/investigations/<id>/`. It verifies the parent trace and child steps
+by reading them back from Weave. Exit status is 0 for a completed `clean` or
+`regression` investigation, 2 for `insufficient`, and 1 for setup/trace failures;
+this is an investigator, not yet a CI gating command.
+
+Experiment labels, patches, local artifact paths, and `run.json` validation
+results never enter model state. Missing evidence, exhausted rounds, service
+errors, low confidence, or verifier disagreement produce `insufficient`.
+The provisional confidence threshold is 0.8; model confidence is not calibrated
+correctness. Receipts retain raw probabilities, tokens, and latency. Dollar
+cost remains unavailable rather than being reported as zero.
+
+The first live pair produced **clean** for the baseline and **regression** for
+the deletion, with both browser tests still passing. See the
+[recorded investigation](docs/experiments/linkding-typesafe.md) for evidence,
+Weave links, and limitations. Broader evaluation and the DeepSeek comparison
+remain to be implemented.
