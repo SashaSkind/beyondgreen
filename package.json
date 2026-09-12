@@ -8,6 +8,8 @@
   },
   "scripts": {
     "check": "tsc --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "investigate": "node --env-file-if-exists=.env scripts/investigate.ts",
     "weave:check": "node --env-file-if-exists=.env scripts/check-weave.ts",
     "models:check": "node --env-file-if-exists=.env scripts/check-models.ts",
     "benchmark:linkding:setup": "python3 benchmarks/linkding/run.py --setup",
