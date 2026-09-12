@@ -46,13 +46,12 @@ failing a test.
 1. [x] **Publish the work.** The public repo showed only the baseline while the
    engine, suite, and comparison sat unpushed. Done when
    `git rev-list --count origin/main..main` returns 0.
-2. [ ] **Prove the demo path.** Capture a fresh clean/mutant pair, then run the
-   investigation on it twice. Done when both runs print the full role
-   trajectory, exit 0, and report a verified Weave trace. Makes billable model
-   calls.
-3. [ ] **Write the demo runbook.** Exact commands in order, the beat each one
-   lands from the plan's 3-minute script, and a fallback for a failed live model
-   call. Done when someone can run the demo from the file alone.
+2. [x] **Prove the demo path.** A fresh pair investigated twice: both runs
+   printed the full trajectory, exited 0, and verified a 9-step Weave trace.
+   Uncovered the validator bug below; after that fix, 18 of 18 traced runs
+   reached a verified verdict, including 6 of 6 `clean` on the control.
+3. [x] **Write the demo runbook.** [DEMO.md](DEMO.md) carries the four commands,
+   the beat each lands, and fallbacks for a failed call or a dead network.
 4. [ ] **Draft the slides**, two at most: the problem, the loop, the finding,
    the comparison.
 5. [ ] **Close the cost gap.** Find a published TypeSafe rate and compute
@@ -60,11 +59,19 @@ failing a test.
    comparable rate exists and keep latency and tokens as the economic evidence.
    H3 — that cheap intelligence makes exhaustive investigation practical — is an
    economic claim, and latency is currently its only support.
-6. [ ] **Reduce demo risk on the two open failures.** DeepSeek exhausts its
-   8,192-token budget on `archive_deletes_bookmark`; shrink the state payload
-   before raising the budget again. One TypeSafe response-validation failure
-   never reproduced across 25 bounded replays, so treat it as a live flake the
-   demo must survive.
+6. [x] **The TypeSafe validation failure is root-caused and fixed.** Providers
+   round probabilities to two decimals, so a well-formed distribution can sum to
+   0.99; the validator allowed only 0.001 of drift. Replaying a saved payload
+   never reproduced it, because the trigger is the sampled probabilities rather
+   than the input — which is why 25 earlier replays came back clean. Traced runs
+   failed 3 of 8 before the fix and 0 of 18 after.
+7. [ ] **DeepSeek still exhausts its 8,192-token budget** on
+   `archive_deletes_bookmark`. Shrink the state payload before raising the
+   budget again; the deletion case sends the largest snapshots.
+8. [ ] **Re-record the comparison.** The published numbers were measured under
+   the too-strict validator, so some abstentions were parser artifacts rather
+   than model behaviour. Re-run both providers on the unchanged suite and
+   restate the results.
 
 ## Human steps
 
