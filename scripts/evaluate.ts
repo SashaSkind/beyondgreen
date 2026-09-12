@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
-import { parseArgs } from "node:util";
+import { isDeepStrictEqual, parseArgs } from "node:util";
+import { setTimeout as delay } from "node:timers/promises";
 import * as weave from "weave";
 import { loadBenchmarkSuite } from "../src/benchmark-suite.ts";
 import { summarizeEvaluation } from "../src/evaluation.ts";
@@ -30,6 +31,7 @@ async function main() {
   const directory = resolve(".scratch/evaluations", evaluationId);
   await mkdir(directory, { recursive: true });
   const rows: Row[] = [];
+  const evaluationTraces: Partial<Record<Provider, string>> = {};
   const codeFiles = ["src/investigation/engine.ts", "src/investigation/evidence.ts", "src/investigation/typesafe.ts", "src/investigation/deepseek.ts", "src/investigation/choice-response.ts", "scripts/evaluate.ts"];
   const codeHashes = Object.fromEntries(await Promise.all(codeFiles.map(async (path) => [path, createHash("sha256").update(await readFile(path)).digest("hex")])));
   const configuration = {
@@ -44,7 +46,7 @@ async function main() {
   const reportPath = join(directory, "evaluation.json");
   async function save(complete: boolean) {
     await writeFile(reportPath, JSON.stringify({
-      evaluationId, suiteSha256: suite.sha256, codeHashes, configuration, complete, rows,
+      evaluationId, suiteSha256: suite.sha256, codeHashes, configuration, complete, rows, evaluationTraces,
       summaries: Object.fromEntries(providers.map((provider) => [provider, summarizeEvaluation(rows.filter((row) => row.provider === provider))])),
     }, null, 2) + "\n");
   }
@@ -95,9 +97,23 @@ async function main() {
   }
   await client.flush();
   // Verify Evaluation.evaluate roots as well as all individual investigation traces.
-  const roots = await client.getCalls({ filter: { trace_roots_only: true }, limit: 100 });
-  const evaluationRoots = roots.filter((call) => call.attributes?.evaluationId === evaluationId && call.op_name.includes("Evaluation.evaluate"));
-  if (evaluationRoots.length !== providers.length || evaluationRoots.some((call) => !call.ended_at || call.exception)) throw new Error("evaluation_trace");
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (attempt > 0) await delay(1000);
+    const roots = await client.getCalls({
+      filter: { trace_roots_only: true }, limit: providers.length + 1,
+      query: { $expr: { $eq: [{ $getField: "attributes.evaluationId" }, { $literal: evaluationId }] } },
+    });
+    for (const provider of providers) {
+      const matching = roots.filter((call) => call.attributes?.provider === provider && call.op_name.includes("Evaluation.evaluate"));
+      const call = matching[0];
+      if (matching.length === 1 && call.ended_at && !call.exception &&
+          isDeepStrictEqual(call.output, summarizeEvaluation(rows.filter((row) => row.provider === provider)))) {
+        evaluationTraces[provider] = `https://wandb.ai/${client.projectId}/r/call/${call.id}`;
+      }
+    }
+    if (Object.keys(evaluationTraces).length === providers.length) break;
+  }
+  if (Object.keys(evaluationTraces).length !== providers.length) throw new Error("evaluation_trace");
   await save(true);
   console.log(`Weave evaluations: https://wandb.ai/${client.projectId}/weave/evaluations`);
   console.log(`Completed evaluation: ${reportPath}`);
