@@ -59,9 +59,11 @@ After capturing the clean/mutant pair, pass their printed artifact directories:
 
 ```sh
 npm run investigate -- --run <current-run-directory> --baseline <clean-run-directory>
+# Use the same investigation loop with the comparison model:
+npm run investigate -- --run <current-run-directory> --baseline <clean-run-directory> --provider deepseek
 ```
 
-This makes billable TypeSafe calls and sends normalized synthetic test evidence
+This makes billable calls to the selected provider and sends normalized synthetic test evidence
 and role trajectories to your Weave project. A Scout proposes a typed
 hypothesis; a Critic chooses missing evidence; the Investigator revises its
 hypothesis; a separate Verifier checks the final conclusion. The model chooses
@@ -84,5 +86,43 @@ cost remains unavailable rather than being reported as zero.
 The first live pair produced **clean** for the baseline and **regression** for
 the deletion, with both browser tests still passing. See the
 [recorded investigation](docs/experiments/linkding-typesafe.md) for evidence,
-Weave links, and limitations. Broader evaluation and the DeepSeek comparison
-remain to be implemented.
+Weave links, and limitations.
+
+## Compare TypeSafe and DeepSeek
+
+```sh
+npm run benchmark:linkding:suite
+npm run evaluate -- --suite <printed-suite.json-path>
+```
+
+The six-case suite contains two clean controls and four archive defects. All six
+run the unchanged upstream browser test. Three defects preserve the bookmark
+count while corrupting a field, losing an association, or changing another
+owner's state. Ground truth comes from exact state validators in the capture
+harness. The evaluator checks artifact hashes before and after each investigation;
+case names and expected verdicts are used for scoring, never sent to the models.
+
+Both providers use the same engine, evidence catalog, contract, questions, four
+critic-round limit, and provisional 0.8 acceptance threshold. Each chooses its
+own retrieval trajectory. DeepSeek runs with reasoning enabled, an 8,192-token
+response budget, and a 90-second request timeout; TypeSafe has a 30-second
+request timeout. Neither adapter retries. DeepSeek's generated confidence and
+probabilities are self-reported, unlike TypeSafe's native distributions, so the
+identical threshold does not establish equivalent calibration.
+
+`--repeats 1-10` repeats model investigations on the same captured evidence;
+it does not create new browser samples. `--provider typesafe` or `--provider deepseek`
+runs only that provider. By default, both run once per case with alternating
+provider order. Receipts under `.scratch/evaluations/<id>/evaluation.json` retain
+every result, code and artifact fingerprints, model configuration, and trace URL.
+Interrupted or unverifiable evaluations remain marked incomplete. Completed
+evaluations may contain wrong or insufficient verdicts and still exit 0.
+
+Weave stores a versioned dataset, separate provider evaluations, per-case
+correctness/abstention scores, and linked full investigation traces. Summary
+accuracy includes abstentions in its denominator; confusion counts distinguish
+wrong verdicts from abstentions. Token totals include only successfully parsed
+responses and therefore undercount billing when requests fail. Comparable billed
+cost remains unavailable; the report includes partial Weave estimates for DeepSeek.
+See the [first comparison](docs/experiments/linkding-comparison.md)
+for measured results and the response-budget limitation it exposed.

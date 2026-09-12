@@ -1,0 +1,637 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-12",
+  "scope": "Development pilot; same six captured archive cases; not held out",
+  "suiteSha256": "28f1d32322b2998e8b567c29303a448d6545b2f6d1b7617f4698b68cbadde7dd",
+  "suitePath": ".scratch/suites/e60d5663305f4924b87aae48fd557411/suite.json",
+  "costScope": "Weave default-rate estimates for successfully parsed model calls only. Excludes failed requests and diagnostic replays; not an invoice or total billing. No TypeSafe rate available.",
+  "studies": [
+    {
+      "evaluationId": "bbcc5075-e416-44f3-b6d7-3e6ad9fd6b1d",
+      "configuration": {
+        "repeats": 1,
+        "providers": [
+          "typesafe",
+          "deepseek"
+        ],
+        "minConfidence": 0.8,
+        "maxRounds": 4,
+        "retries": 0,
+        "typesafeModel": "jev-1.13.0",
+        "deepseekModel": "deepseek-ai/DeepSeek-V4-Pro-0813",
+        "deepseekReasoning": true,
+        "deepseekMaxTokens": 4096,
+        "confidenceSemantics": {
+          "typesafe": "native distribution concentration",
+          "deepseek": "self-reported estimate; not calibrated or directly comparable"
+        },
+        "usageScope": "Successful parsed responses only; failed requests may incur unreported usage."
+      },
+      "codeHashes": {
+        "src/investigation/engine.ts": "bb4cd2527b0be96ae1cfc51e28ecf892dd6dc1157d6380bc08141299d52bfc5b",
+        "src/investigation/evidence.ts": "152bd6142cf724ad9777b0918d463fe30fc7c6483718b2f69742252d2891bbeb",
+        "src/investigation/typesafe.ts": "20e1f9ea3791e1d7f70b180978950f023afb6257410bfc3b9dddd2522c5929f8",
+        "src/investigation/deepseek.ts": "ad3fd94f28ee0c015287f3fdc22416bd391baafff9d7ba5325d4f581c69b22b2",
+        "src/investigation/choice-response.ts": "41d65eee1dc3482888a1247feb33aaae5b91dfad24e4104786b4d4be6d2c4cd6",
+        "scripts/evaluate.ts": "86d9e7bf97dcb466d3f94b8d1a2256dd255d2678fedcad1f2ebe09701600cec5"
+      },
+      "summaries": {
+        "typesafe": {
+          "total": 6,
+          "correct": 4,
+          "confusion": {
+            "truePositive": 2,
+            "falsePositive": 0,
+            "trueNegative": 2,
+            "falseNegative": 0,
+            "abstainedRegression": 2,
+            "abstainedClean": 0
+          },
+          "accuracyAll": 0.6666666666666666,
+          "coverage": 0.6666666666666666,
+          "regressionRecallAll": 0.5,
+          "precision": 1,
+          "falsePositiveRateAll": 0,
+          "abstentionRate": 0.3333333333333333,
+          "meanLatencyMs": 5072.29335433333,
+          "usage": {
+            "inputTokens": 69952,
+            "outputTokens": 2111
+          },
+          "costUsd": null
+        },
+        "deepseek": {
+          "total": 6,
+          "correct": 2,
+          "confusion": {
+            "truePositive": 1,
+            "falsePositive": 0,
+            "trueNegative": 1,
+            "falseNegative": 0,
+            "abstainedRegression": 3,
+            "abstainedClean": 1
+          },
+          "accuracyAll": 0.3333333333333333,
+          "coverage": 0.3333333333333333,
+          "regressionRecallAll": 0.25,
+          "precision": 1,
+          "falsePositiveRateAll": 0,
+          "abstentionRate": 0.6666666666666666,
+          "meanLatencyMs": 48035.66908316666,
+          "usage": {
+            "inputTokens": 32805,
+            "outputTokens": 20789
+          },
+          "costUsd": null
+        }
+      },
+      "evaluationTraces": {
+        "typesafe": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097ad-a098-7b31-b7da-54b2fb654102",
+        "deepseek": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097ad-a099-783c-ba54-97d4455e8d4d"
+      },
+      "weaveCostEstimates": {
+        "typesafe": {
+          "estimatedParsedCallCostUsd": null,
+          "pricedCalls": 0,
+          "parsedCalls": 37
+        },
+        "deepseek": {
+          "estimatedParsedCallCostUsd": 0.12529898965590291,
+          "pricedCalls": 18,
+          "parsedCalls": 18
+        }
+      },
+      "rows": [
+        {
+          "caseId": "clean_archive",
+          "provider": "typesafe",
+          "expected": "clean",
+          "verdict": "clean",
+          "reason": "verified",
+          "latencyMs": 6034.155375,
+          "usage": {
+            "inputTokens": 13911,
+            "outputTokens": 399
+          },
+          "models": [
+            "jev-1.13.0"
+          ],
+          "hypotheses": [
+            "unknown",
+            "consistent",
+            "consistent"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097ad-a0a2-768c-8db7-7829fcb1922d",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "clean_archive",
+          "provider": "deepseek",
+          "expected": "clean",
+          "verdict": "insufficient",
+          "reason": "model_error",
+          "latencyMs": 33634.958667,
+          "usage": {
+            "inputTokens": 710,
+            "outputTokens": 381
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown"
+          ],
+          "evidenceIds": [],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097ad-cd9d-7bd6-a381-b7612ee5a30d",
+          "traceVerified": true,
+          "verifiedChildCalls": 2
+        },
+        {
+          "caseId": "archive_deletes_bookmark",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "insufficient",
+          "reason": "model_error",
+          "latencyMs": 59482.614582999995,
+          "usage": {
+            "inputTokens": 710,
+            "outputTokens": 2761
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown"
+          ],
+          "evidenceIds": [],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097ae-62ef-7a68-83da-335232e07cba",
+          "traceVerified": true,
+          "verifiedChildCalls": 2
+        },
+        {
+          "caseId": "archive_deletes_bookmark",
+          "provider": "typesafe",
+          "expected": "regression",
+          "verdict": "regression",
+          "reason": "verified",
+          "latencyMs": 5296.747833999994,
+          "usage": {
+            "inputTokens": 13442,
+            "outputTokens": 406
+          },
+          "models": [
+            "jev-1.13.0"
+          ],
+          "hypotheses": [
+            "unknown",
+            "suspected_violation",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097af-5c0d-7140-b116-f0ddef65a40b",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_toggles_unread",
+          "provider": "typesafe",
+          "expected": "regression",
+          "verdict": "insufficient",
+          "reason": "model_error",
+          "latencyMs": 5346.791125000003,
+          "usage": {
+            "inputTokens": 3530,
+            "outputTokens": 160
+          },
+          "models": [
+            "jev-1.13.0"
+          ],
+          "hypotheses": [
+            "unknown",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "database_state"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097af-7f9a-71f3-a960-924c1df6c5c8",
+          "traceVerified": true,
+          "verifiedChildCalls": 5
+        },
+        {
+          "caseId": "archive_toggles_unread",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "insufficient",
+          "reason": "model_error",
+          "latencyMs": 44410.019,
+          "usage": {
+            "inputTokens": 710,
+            "outputTokens": 1113
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown"
+          ],
+          "evidenceIds": [],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097af-a367-73ae-8ad2-a457521f6365",
+          "traceVerified": true,
+          "verifiedChildCalls": 2
+        },
+        {
+          "caseId": "archive_clears_tags",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "regression",
+          "reason": "verified",
+          "latencyMs": 59575.77991700001,
+          "usage": {
+            "inputTokens": 13050,
+            "outputTokens": 8377
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown",
+            "unknown",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "operation_contract",
+            "database_state"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b0-62ad-72b7-9afb-84b2465190d3",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_clears_tags",
+          "provider": "typesafe",
+          "expected": "regression",
+          "verdict": "regression",
+          "reason": "verified",
+          "latencyMs": 4398.864624999987,
+          "usage": {
+            "inputTokens": 13877,
+            "outputTokens": 406
+          },
+          "models": [
+            "jev-1.13.0"
+          ],
+          "hypotheses": [
+            "unknown",
+            "suspected_violation",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b1-5c80-757e-a472-f1433ad574c3",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_changes_other_owner",
+          "provider": "typesafe",
+          "expected": "regression",
+          "verdict": "insufficient",
+          "reason": "incomplete_evidence",
+          "latencyMs": 4219.559542000003,
+          "usage": {
+            "inputTokens": 11281,
+            "outputTokens": 341
+          },
+          "models": [
+            "jev-1.13.0"
+          ],
+          "hypotheses": [
+            "unknown",
+            "suspected_violation",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b1-7d0d-7083-8a16-c01bfdd9f5af",
+          "traceVerified": true,
+          "verifiedChildCalls": 8
+        },
+        {
+          "caseId": "archive_changes_other_owner",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "insufficient",
+          "reason": "model_error",
+          "latencyMs": 40028.486915999965,
+          "usage": {
+            "inputTokens": 710,
+            "outputTokens": 961
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown"
+          ],
+          "evidenceIds": [],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b1-9ed5-7126-abc8-300c6693d0a1",
+          "traceVerified": true,
+          "verifiedChildCalls": 2
+        },
+        {
+          "caseId": "archive_refresh_control",
+          "provider": "deepseek",
+          "expected": "clean",
+          "verdict": "clean",
+          "reason": "verified",
+          "latencyMs": 51082.155415999994,
+          "usage": {
+            "inputTokens": 16915,
+            "outputTokens": 7196
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown",
+            "consistent",
+            "consistent"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b2-4b71-783d-b673-83388fe5b5c7",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_refresh_control",
+          "provider": "typesafe",
+          "expected": "clean",
+          "verdict": "clean",
+          "reason": "verified",
+          "latencyMs": 5137.641624999989,
+          "usage": {
+            "inputTokens": 13911,
+            "outputTokens": 399
+          },
+          "models": [
+            "jev-1.13.0"
+          ],
+          "hypotheses": [
+            "unknown",
+            "consistent",
+            "consistent"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b3-2661-7a6d-b79b-d96439108db4",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        }
+      ]
+    },
+    {
+      "evaluationId": "1e93d504-f42e-4e74-ad14-b478adcbf099",
+      "configuration": {
+        "repeats": 1,
+        "providers": [
+          "deepseek"
+        ],
+        "minConfidence": 0.8,
+        "maxRounds": 4,
+        "retries": 0,
+        "typesafeModel": "jev-1.13.0",
+        "deepseekModel": "deepseek-ai/DeepSeek-V4-Pro-0813",
+        "deepseekReasoning": true,
+        "deepseekMaxTokens": 8192,
+        "deepseekTimeoutMs": 90000,
+        "confidenceSemantics": {
+          "typesafe": "native distribution concentration",
+          "deepseek": "self-reported estimate; not calibrated or directly comparable"
+        },
+        "usageScope": "Successful parsed responses only; failed requests may incur unreported usage."
+      },
+      "codeHashes": {
+        "src/investigation/engine.ts": "bb4cd2527b0be96ae1cfc51e28ecf892dd6dc1157d6380bc08141299d52bfc5b",
+        "src/investigation/evidence.ts": "152bd6142cf724ad9777b0918d463fe30fc7c6483718b2f69742252d2891bbeb",
+        "src/investigation/typesafe.ts": "20e1f9ea3791e1d7f70b180978950f023afb6257410bfc3b9dddd2522c5929f8",
+        "src/investigation/deepseek.ts": "9792d4e12c1deed52daf813f5d3c1f69c990b955394162822457178a1cbf068b",
+        "src/investigation/choice-response.ts": "41d65eee1dc3482888a1247feb33aaae5b91dfad24e4104786b4d4be6d2c4cd6",
+        "scripts/evaluate.ts": "131c7fc6f534178dc27818fcc10a1fb43284ae2f57b91ee56280343c64c625c9"
+      },
+      "summaries": {
+        "deepseek": {
+          "total": 6,
+          "correct": 5,
+          "confusion": {
+            "truePositive": 3,
+            "falsePositive": 0,
+            "trueNegative": 2,
+            "falseNegative": 0,
+            "abstainedRegression": 1,
+            "abstainedClean": 0
+          },
+          "accuracyAll": 0.8333333333333334,
+          "coverage": 0.8333333333333334,
+          "regressionRecallAll": 0.75,
+          "precision": 1,
+          "falsePositiveRateAll": 0,
+          "abstentionRate": 0.16666666666666666,
+          "meanLatencyMs": 81351.45793033332,
+          "usage": {
+            "inputTokens": 78644,
+            "outputTokens": 51230
+          },
+          "costUsd": null
+        }
+      },
+      "evaluationTraces": {
+        "deepseek": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b5-13e7-799f-b4b1-e808b4d56c6a"
+      },
+      "weaveCostEstimates": {
+        "deepseek": {
+          "estimatedParsedCallCostUsd": 0.3058944391168552,
+          "pricedCalls": 37,
+          "parsedCalls": 37
+        }
+      },
+      "rows": [
+        {
+          "caseId": "clean_archive",
+          "provider": "deepseek",
+          "expected": "clean",
+          "verdict": "clean",
+          "reason": "verified",
+          "latencyMs": 64905.498166000005,
+          "usage": {
+            "inputTokens": 16915,
+            "outputTokens": 8517
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown",
+            "consistent",
+            "consistent"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b5-13f0-7fa8-bf35-ec9fe7c7e04b",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_deletes_bookmark",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "insufficient",
+          "reason": "model_error",
+          "latencyMs": 100017.647291,
+          "usage": {
+            "inputTokens": 1752,
+            "outputTokens": 2670
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown"
+          ],
+          "evidenceIds": [
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b6-2736-7e46-86f7-b61ce0462eac",
+          "traceVerified": true,
+          "verifiedChildCalls": 4
+        },
+        {
+          "caseId": "archive_toggles_unread",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "regression",
+          "reason": "verified",
+          "latencyMs": 118783.04570799999,
+          "usage": {
+            "inputTokens": 16939,
+            "outputTokens": 15263
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown",
+            "suspected_violation",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b7-beb5-7f4d-8b3f-ba34d6dd10de",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_clears_tags",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "regression",
+          "reason": "verified",
+          "latencyMs": 75164.31445800001,
+          "usage": {
+            "inputTokens": 16884,
+            "outputTokens": 9852
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown",
+            "suspected_violation",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "database_state",
+            "operation_contract"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097b9-a152-7ec7-93b1-18edf01291a1",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_changes_other_owner",
+          "provider": "deepseek",
+          "expected": "regression",
+          "verdict": "regression",
+          "reason": "verified",
+          "latencyMs": 83428.16316699999,
+          "usage": {
+            "inputTokens": 13083,
+            "outputTokens": 9669
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown",
+            "unknown",
+            "suspected_violation"
+          ],
+          "evidenceIds": [
+            "operation_contract",
+            "database_state"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097ba-d82c-7573-93be-c85a9980c1f9",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        },
+        {
+          "caseId": "archive_refresh_control",
+          "provider": "deepseek",
+          "expected": "clean",
+          "verdict": "clean",
+          "reason": "verified",
+          "latencyMs": 45810.07879199996,
+          "usage": {
+            "inputTokens": 13071,
+            "outputTokens": 5259
+          },
+          "models": [
+            "deepseek-ai/DeepSeek-V4-Pro-0813"
+          ],
+          "hypotheses": [
+            "unknown",
+            "unknown",
+            "consistent"
+          ],
+          "evidenceIds": [
+            "operation_contract",
+            "database_state"
+          ],
+          "traceUrl": "https://wandb.ai/as-skinderev/beyond-green/r/call/01a097bc-31f3-7e79-99bc-c8ee0aa6bd0e",
+          "traceVerified": true,
+          "verifiedChildCalls": 9
+        }
+      ]
+    }
+  ]
+}
