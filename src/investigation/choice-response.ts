@@ -1,6 +1,12 @@
 import type { ChoiceAnswer, ChoiceQuestion, Judgment } from "./types.ts";
 
-const probabilityTolerance = 0.001;
+// Providers report probabilities rounded to two decimals, so a well-formed
+// distribution can sum to 0.99 or 1.01 and a pairwise comparison can invert by
+// one unit. Live sampling of jev-1.13.0 rejected 3 of 62 answers under a 0.001
+// tolerance, each a two-decimal distribution summing to 0.99.
+const roundingUnit = 0.01;
+// Each rounded value carries at most half a unit of error, so n values carry n/2.
+const sumTolerance = (options: number) => options * (roundingUnit / 2) + Number.EPSILON;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -57,8 +63,8 @@ export function parseJudgment(
     const selectedProbability = distribution[answer.choice];
     const total = probabilities.reduce((sum, [, probability]) => sum + probability, 0);
     if (
-      Math.abs(total - 1) > probabilityTolerance ||
-      probabilities.some(([, probability]) => probability > selectedProbability + probabilityTolerance)
+      Math.abs(total - 1) > sumTolerance(options.length) ||
+      probabilities.some(([, probability]) => probability > selectedProbability + roundingUnit)
     ) {
       return invalidResponse();
     }

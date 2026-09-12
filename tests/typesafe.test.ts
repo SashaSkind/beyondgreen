@@ -137,3 +137,78 @@ test("TypeSafe accepts normal probability rounding error", async () => {
   const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
   assert.equal((await judge(null, questions)).answers.verdict.choice, "violation");
 });
+
+// Live sampling of jev-1.13.0 returned probabilities rounded to two decimals, so
+// a well-formed distribution can sum to 0.99 or 1.01. These are verbatim bodies
+// from three rejected responses observed across 62 sampled answers.
+const scoutQuestions: Record<string, ChoiceQuestion> = {
+  hypothesis: {
+    type: "choice",
+    instructions: "Assess the observed operation.",
+    criteria: { consistent: "Satisfies the contract", suspected_violation: "Violates the contract", unknown: "Cannot establish" },
+  },
+};
+
+function roundedResponse(probabilities: Record<string, number>, choice: string) {
+  return {
+    model: "jev-1.13.0",
+    answers: { hypothesis: { type: "choice", choice, confidence: 0.33, probabilities } },
+    usage: { input_tokens: 491, output_tokens: 38 },
+  };
+}
+
+test("TypeSafe accepts a three-option two-decimal distribution summing to 0.99", async () => {
+  const response = roundedResponse({ unknown: 0.55, suspected_violation: 0.27, consistent: 0.17 }, "unknown");
+  const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
+  const judgment = await judge(null, scoutQuestions);
+  assert.equal(judgment.answers.hypothesis.choice, "unknown");
+  assert.equal(judgment.answers.hypothesis.probabilities.unknown, 0.55);
+});
+
+test("TypeSafe accepts a two-decimal distribution summing to 1.01", async () => {
+  const response = roundedResponse({ unknown: 0.56, suspected_violation: 0.28, consistent: 0.17 }, "unknown");
+  const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
+  assert.equal((await judge(null, scoutQuestions)).answers.hypothesis.choice, "unknown");
+});
+
+test("TypeSafe accepts a four-option two-decimal distribution summing to 0.99", async () => {
+  const evidenceQuestions: Record<string, ChoiceQuestion> = {
+    next_evidence: {
+      type: "choice",
+      instructions: "Choose the most useful missing evidence.",
+      criteria: { database_state: "Snapshots", known_good_run: "Reference run", operation_contract: "Contract", none: "Nothing needed" },
+    },
+  };
+  const response = {
+    model: "jev-1.13.0",
+    answers: {
+      next_evidence: {
+        type: "choice",
+        choice: "database_state",
+        confidence: 0.39,
+        probabilities: { database_state: 0.54, known_good_run: 0.05, operation_contract: 0.28, none: 0.12 },
+      },
+    },
+    usage: { input_tokens: 602, output_tokens: 81 },
+  };
+  const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
+  assert.equal((await judge(null, evidenceQuestions)).answers.next_evidence.choice, "database_state");
+});
+
+test("TypeSafe accepts a choice one rounding unit below the reported maximum", async () => {
+  const response = roundedResponse({ unknown: 0.44, suspected_violation: 0.45, consistent: 0.11 }, "unknown");
+  const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
+  assert.equal((await judge(null, scoutQuestions)).answers.hypothesis.choice, "unknown");
+});
+
+test("TypeSafe still rejects a distribution too far from one to be rounding", async () => {
+  const response = roundedResponse({ unknown: 0.55, suspected_violation: 0.15, consistent: 0.1 }, "unknown");
+  const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
+  await assert.rejects(judge(null, scoutQuestions), { message: "TypeSafe returned an invalid response" });
+});
+
+test("TypeSafe still rejects a choice far below the reported maximum", async () => {
+  const response = roundedResponse({ unknown: 0.2, suspected_violation: 0.7, consistent: 0.1 }, "unknown");
+  const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
+  await assert.rejects(judge(null, scoutQuestions), { message: "TypeSafe returned an invalid response" });
+});
