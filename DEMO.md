@@ -22,11 +22,10 @@ CLEAN=<clean_run>
 MUTANT=<mutant_run>
 ```
 
-Confirm the headline fact holds in this capture — `final_screenshots_byte_identical`
-is `true` and the mutant's `bookmark_count_after` is 8 against the clean 9:
+Confirm the headline facts hold in this capture:
 
 ```sh
-python3 -m json.tool "$MUTANT/comparison.json" | grep -E "screenshots_byte_identical|bookmark_count_after|upstream_test_passed"
+npm run benchmark:linkding:show -- "$MUTANT"
 ```
 
 Then dry-run beat 2 once. It should print `regression` and exit 0.
@@ -37,12 +36,21 @@ Show that the upstream test passes on the defective build. The test is
 Linkding's own, unmodified:
 
 ```sh
-grep -E "upstream_test_passed|regression" "$MUTANT/comparison.json"
+npm run benchmark:linkding:show -- "$MUTANT"
+```
+
+```
+upstream test         : PASSED
+screenshots identical : True
+clean bookmarks       : 9 -> 9
+mutant bookmarks      : 9 -> 8
+
+1 bookmark row(s) destroyed by an operation the test reports as successful.
 ```
 
 Say: *this build deletes a bookmark instead of archiving it, and the project's
-own browser test passes anyway. The final screenshots are byte-identical, so
-the UI cannot tell you.*
+own browser test passes anyway. The final screenshots are byte-identical, so the
+UI cannot tell you.*
 
 ## 0:20–1:20 · The loop
 
