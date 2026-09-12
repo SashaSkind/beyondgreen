@@ -41,7 +41,7 @@ async function main() {
 const timeout = setTimeout(() => {
   console.error("Investigation timed out. Check the local receipt and provider connectivity.");
   process.exit(1);
-}, 660_000);
+}, 960_000);
 timeout.unref();
 try {
   await main();

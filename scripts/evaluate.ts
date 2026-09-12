@@ -7,7 +7,7 @@ import { loadBenchmarkSuite } from "../src/benchmark-suite.ts";
 import { summarizeEvaluation } from "../src/evaluation.ts";
 import { loadLinkdingEvidence } from "../src/investigation/evidence.ts";
 import { createTypeSafeJudge } from "../src/investigation/typesafe.ts";
-import { createDeepSeekJudge } from "../src/investigation/deepseek.ts";
+import { createDeepSeekJudge, DEEPSEEK_SETTINGS } from "../src/investigation/deepseek.ts";
 import { createTracedInvestigation, verifyInvestigationTrace } from "../src/investigation/tracing.ts";
 import type { Investigation } from "../src/investigation/engine.ts";
 
@@ -36,7 +36,8 @@ async function main() {
     repeats, providers, minConfidence: 0.8, maxRounds: 4, retries: 0,
     typesafeModel: process.env.TYPESAFE_MODEL || "jev-1.13.0",
     deepseekModel: process.env.WANDB_INFERENCE_MODEL || "deepseek-ai/DeepSeek-V4-Pro-0813",
-    deepseekReasoning: true, deepseekMaxTokens: 4096,
+    deepseekReasoning: DEEPSEEK_SETTINGS.reasoning, deepseekMaxTokens: DEEPSEEK_SETTINGS.maxTokens,
+    deepseekTimeoutMs: DEEPSEEK_SETTINGS.timeoutMs,
     confidenceSemantics: { typesafe: "native distribution concentration", deepseek: "self-reported estimate; not calibrated or directly comparable" },
     usageScope: "Successful parsed responses only; failed requests may incur unreported usage.",
   };

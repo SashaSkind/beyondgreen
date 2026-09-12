@@ -30,7 +30,7 @@ test("DeepSeek sends the shared questions with a strict dynamic schema and maps 
       assert.equal(headers.get("content-type"), "application/json");
       const body = JSON.parse(String(init?.body));
       assert.equal(body.model, "requested-model");
-      assert.equal(body.max_tokens, 4096);
+      assert.equal(body.max_tokens, 8192);
       assert.deepEqual(body.chat_template_kwargs, { enable_thinking: true });
       assert.deepEqual(JSON.parse(body.messages[1].content), { state, questions });
       assert.match(body.messages[0].content, /self-reported/);
@@ -62,10 +62,12 @@ test("DeepSeek rejects truncated and malformed completions rather than grading t
   const invalidProbability = completion({ answers: { verdict: { ...answer, probabilities: { violation: 0.4, consistent: 0.1 } } } });
   const extraAnswer = completion({ answers: { verdict: answer, leaked: answer } });
   const missingUsage = { ...completion(), usage: {} };
-  for (const payload of [truncated, invalidProbability, extraAnswer, missingUsage]) {
+  for (const payload of [invalidProbability, extraAnswer, missingUsage]) {
     const judge = createDeepSeekJudge({ apiKey: "test", project: "team/project", fetch: async () => Response.json(payload) });
     await assert.rejects(judge({}, questions), /^Error: DeepSeek returned an invalid or incomplete response$/);
   }
+  const judge = createDeepSeekJudge({ apiKey: "test", project: "team/project", fetch: async () => Response.json(truncated) });
+  await assert.rejects(judge({}, questions), /^Error: DeepSeek response exceeded token budget$/);
 });
 
 test("DeepSeek sanitizes failures and never retries", async () => {
