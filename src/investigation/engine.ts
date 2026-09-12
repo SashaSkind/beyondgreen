@@ -107,7 +107,11 @@ export async function investigate(source: EvidenceSource, judge: Judge, options:
         return finish("verified", expected);
       }
       const key = critic.answers.next_evidence.choice;
-      if (!Object.hasOwn(available, key)) return finish("incomplete_evidence");
+      // Distinguish a Critic that wants nothing further while still holding
+      // incomplete evidence from one that has everything required and remains
+      // unconvinced; the two abstain for opposite reasons.
+      if (key === "none") return finish(complete ? "critic_unconvinced" : "incomplete_evidence");
+      if (!Object.hasOwn(available, key)) return finish("invalid_evidence_choice");
       try {
         result.retrieved[key as EvidenceKey] = await source.retrieve(key as EvidenceKey);
         result.evidenceIds.push(key as EvidenceKey);

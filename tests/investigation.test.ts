@@ -123,3 +123,56 @@ test("the round budget bounds investigation without forcing a verdict", async ()
   assert.equal(result.reason, "budget_exhausted");
   assert.equal(result.steps.length, 3);
 });
+
+// Observed live: two abstentions reported "incomplete_evidence" while both
+// required sources had in fact been retrieved. The Critic had simply failed the
+// confidence gate (supported@0.65, refuted@0.46) and then asked for no more
+// evidence, so the reported reason named the wrong cause.
+function convincedThrough(assessment: Judgment): Judgment[] {
+  return [
+    judgment({ hypothesis: "unknown" }),
+    judgment({ assessment: "insufficient", next_evidence: "database_state" }),
+    judgment({ hypothesis: "suspected_violation" }),
+    judgment({ assessment: "insufficient", next_evidence: "operation_contract" }),
+    judgment({ hypothesis: "suspected_violation" }),
+    assessment,
+  ];
+}
+
+test("an unconvinced critic holding complete evidence is not reported as missing evidence", async () => {
+  const evidence = source();
+  const result = await investigate(evidence, scripted(
+    convincedThrough(judgment({ assessment: "supported", next_evidence: "none" }, 0.65)),
+  ));
+  assert.equal(result.verdict, "insufficient");
+  assert.deepEqual(result.evidenceIds, ["database_state", "operation_contract"]);
+  assert.equal(result.reason, "critic_unconvinced");
+});
+
+test("a refuting critic holding complete evidence is reported as unconvinced", async () => {
+  const result = await investigate(source(), scripted(
+    convincedThrough(judgment({ assessment: "refuted", next_evidence: "none" })),
+  ));
+  assert.equal(result.verdict, "insufficient");
+  assert.equal(result.reason, "critic_unconvinced");
+});
+
+test("a critic asking for nothing before the required evidence still reports incomplete evidence", async () => {
+  const result = await investigate(source(), scripted([
+    judgment({ hypothesis: "suspected_violation" }),
+    judgment({ assessment: "insufficient", next_evidence: "none" }),
+  ]));
+  assert.equal(result.verdict, "insufficient");
+  assert.equal(result.reason, "incomplete_evidence");
+});
+
+test("a critic reselecting already retrieved evidence is reported as an invalid choice", async () => {
+  const result = await investigate(source(), scripted([
+    judgment({ hypothesis: "unknown" }),
+    judgment({ assessment: "insufficient", next_evidence: "database_state" }),
+    judgment({ hypothesis: "unknown" }),
+    judgment({ assessment: "insufficient", next_evidence: "database_state" }),
+  ]));
+  assert.equal(result.verdict, "insufficient");
+  assert.equal(result.reason, "invalid_evidence_choice");
+});
