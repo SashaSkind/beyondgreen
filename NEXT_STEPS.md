@@ -86,11 +86,17 @@ failing a test.
    investigations. Weave prices DeepSeek at about six cents per investigation and
    has no rate for `jev-1.13.0`. All four studies are in
    [linkding-comparison-results.json](docs/experiments/linkding-comparison-results.json).
-9. [ ] **Find a held-out historical case.** A real fixed bug whose feature
-    already had a passing E2E test, where the fix commit adds the missing
-    assertion. This is the one thing that answers "the cases were written to
-    suit the investigator". Research is underway across five application
-    domains; results land in `docs/research/benchmark-known-bugs-*.md`.
+9. [x] **Held-out historical cases found.** Five domain reviews across roughly
+    thirty applications; the decision is in
+    [benchmark-selection.md](docs/research/benchmark-selection.md#second-round-held-out-historical-cases).
+    Documenso #2485 leads: a user-reported bug that shipped, whose existing
+    Playwright spec already reads the corrupted row and asserts the wrong two
+    columns. Nothing has been executed, so every case is still a candidate.
+10. [ ] **Prove one held-out case end to end.** Check out the fix's parent
+    commit, run the pre-existing test unchanged, and confirm it passes on the
+    defective code. That premise is inferred from CI, never observed, and it is
+    the single most important unverified claim in all five reviews. Until it
+    holds, the Linkding suite is still the only demonstrated benchmark.
 
 ## Human steps
 
