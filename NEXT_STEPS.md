@@ -36,8 +36,10 @@ failing a test.
 - **Neither adapter retries.** A retry on one provider breaks the symmetry the
   comparison rests on. Put any retry behind a demo-only flag and record it in
   the receipt.
-- **`costUsd` stays null while no comparable rate exists.** Reporting zero
-  asserts a measurement nobody made.
+- **Billed cost stays null; estimates carry their source.** No invoice reaches
+  this harness, so `costUsd` is always null. An estimate may be reported only
+  through [cost.ts](src/cost.ts), which records the rate it used and who
+  published it, and a provider with no rate reports no cost rather than zero.
 - **The upstream browser test and its assertions stay unmodified.** The claim is
   that a real test misses the defect; editing the test forfeits the claim.
 
@@ -56,13 +58,15 @@ failing a test.
    the comparison. A published explainer page already carries the loop diagram,
    the model-state boundary, a real nine-step trajectory, and the measured
    table; reuse its figures rather than inventing new ones.
-5. [x] **The cost gap cannot be closed from public sources.** TypeSafe publishes
-   no rate: `typesafe.ai/pricing` returns 404, the
-   [API reference](https://docs.typesafe.ai/api.md) documents no billing, and
-   responses carry only `usage` token counts. So `costUsd` stays null, and
-   latency plus tokens remain the economic evidence for H3 — that cheap
-   intelligence makes exhaustive investigation practical. Ask TypeSafe directly
-   for a rate if a dollar figure is needed for the submission.
+5. [x] **The cost gap is closed.** No public page carries a TypeSafe rate —
+   `typesafe.ai/pricing` returns 404 and the
+   [API reference](https://docs.typesafe.ai/api.md) documents no billing — but
+   the account's own usage dashboard states $0.042 per million input tokens with
+   output not billed. [cost.ts](src/cost.ts) holds that rate with its
+   provenance, and the evaluator now reports an estimated cost per
+   investigation: $0.00054 for TypeSafe against about $0.06 for DeepSeek.
+   Keep billed cost null; only estimates are available, and DeepSeek's comes
+   from Weave rather than from its provider.
 6. [x] **The TypeSafe validation failure is root-caused and fixed.** Providers
    round probabilities to two decimals, so a well-formed distribution can sum to
    0.99; the validator allowed only 0.001 of drift. Replaying a saved payload

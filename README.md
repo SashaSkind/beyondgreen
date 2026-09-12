@@ -125,10 +125,13 @@ wrong verdicts from abstentions. Token totals include only successfully parsed
 responses and therefore undercount billing when requests fail. Comparable billed
 cost remains unavailable; the report includes partial Weave estimates for DeepSeek.
 Across the two most recent studies, TypeSafe returned 4 of 6 correct verdicts
-with 2 reproducible abstentions at about 5–6 seconds per investigation, and
-DeepSeek returned 6 of 6 at about 79–93 seconds and roughly six cents. Neither
-issued an incorrect verdict or a false positive in 24 investigations. Weave has
-no rate for `jev-1.13.0`, so a provider cost comparison is still unavailable.
-See the [provider comparison](docs/experiments/linkding-comparison.md) for all
-four studies, the validator defect that invalidated the earlier abstention
-counts, and the limits these six captures cannot exceed.
+with 2 reproducible abstentions at about 5–6 seconds and $0.00054 per
+investigation, and DeepSeek returned 6 of 6 at about 79–93 seconds and $0.06.
+Neither issued an incorrect verdict or a false positive in 24 investigations.
+TypeSafe's cost is arithmetic on its published input-token rate; DeepSeek's is a
+Weave default-rate estimate, so the two are not equally firm. Both providers
+consume a similar volume of input tokens, so the cost difference is the rate
+rather than efficiency. See the
+[provider comparison](docs/experiments/linkding-comparison.md) for all four
+studies, the validator defect that invalidated the earlier abstention counts,
+and the limits these six captures cannot exceed.

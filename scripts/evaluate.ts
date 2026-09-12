@@ -6,6 +6,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import * as weave from "weave";
 import { loadBenchmarkSuite } from "../src/benchmark-suite.ts";
 import { summarizeEvaluation } from "../src/evaluation.ts";
+import { PUBLISHED_RATES } from "../src/cost.ts";
 import { loadLinkdingEvidence } from "../src/investigation/evidence.ts";
 import { createTypeSafeJudge } from "../src/investigation/typesafe.ts";
 import { createDeepSeekJudge, DEEPSEEK_SETTINGS } from "../src/investigation/deepseek.ts";
@@ -42,12 +43,17 @@ async function main() {
     deepseekTimeoutMs: DEEPSEEK_SETTINGS.timeoutMs,
     confidenceSemantics: { typesafe: "native distribution concentration", deepseek: "self-reported estimate; not calibrated or directly comparable" },
     usageScope: "Successful parsed responses only; failed requests may incur unreported usage.",
+    rates: Object.fromEntries(providers.map((provider) => [provider, PUBLISHED_RATES[provider] ?? null])),
   };
+  // One definition, so the saved receipt, the logged summary and the trace
+  // verification below cannot disagree about how a summary was computed.
+  const summaryFor = (provider: Provider) =>
+    summarizeEvaluation(rows.filter((row) => row.provider === provider), PUBLISHED_RATES[provider]);
   const reportPath = join(directory, "evaluation.json");
   async function save(complete: boolean) {
     await writeFile(reportPath, JSON.stringify({
       evaluationId, suiteSha256: suite.sha256, codeHashes, configuration, complete, rows, evaluationTraces,
-      summaries: Object.fromEntries(providers.map((provider) => [provider, summarizeEvaluation(rows.filter((row) => row.provider === provider))])),
+      summaries: Object.fromEntries(providers.map((provider) => [provider, summaryFor(provider)])),
     }, null, 2) + "\n");
   }
   await save(false);
@@ -91,7 +97,7 @@ async function main() {
     }
   }
   for (const provider of providers) {
-    const summary = summarizeEvaluation(rows.filter((row) => row.provider === provider));
+    const summary = summaryFor(provider);
     await loggers[provider].logSummary(summary);
     console.log(`${provider} summary: ${JSON.stringify(summary)}`);
   }
@@ -107,7 +113,7 @@ async function main() {
       const matching = roots.filter((call) => call.attributes?.provider === provider && call.op_name.includes("Evaluation.evaluate"));
       const call = matching[0];
       if (matching.length === 1 && call.ended_at && !call.exception &&
-          isDeepStrictEqual(call.output, summarizeEvaluation(rows.filter((row) => row.provider === provider)))) {
+          isDeepStrictEqual(call.output, summaryFor(provider))) {
         evaluationTraces[provider] = `https://wandb.ai/${client.projectId}/r/call/${call.id}`;
       }
     }

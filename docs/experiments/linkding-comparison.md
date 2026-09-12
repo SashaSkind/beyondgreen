@@ -174,8 +174,9 @@ diagnostic labels. Each is one sample per capture per provider.
 | Incorrect verdicts | 0 · 0 | 0 · 0 |
 | False positives on controls | 0 · 0 | 0 · 0 |
 | Mean latency | 5.32 s · 6.11 s | 92.54 s · 78.79 s |
+| Input tokens per investigation | 12,950 | 15,585 · 16,193 |
 | Output tokens per investigation | 382 · 382 | 11,229 · 9,923 |
-| Weave cost estimate per investigation | no rate available | $0.0649 · $0.0605 |
+| Estimated cost per investigation | $0.00054 | $0.0649 · $0.0605 |
 
 TypeSafe abstained on exactly `archive_toggles_unread` and
 `archive_changes_other_owner` in both runs, for the same reason, with both
@@ -189,13 +190,32 @@ produced a false positive on a control. The distinction that matters for a CI
 gate is the failure mode: TypeSafe's is silence, DeepSeek's was latency and
 cost.
 
-Weave prices DeepSeek's parsed calls at default rates and has no rate for
-`jev-1.13.0`, so the missing dollar figure is upstream rather than a gap in this
-harness. On these samples one investigation costs about six cents and 79–93
-seconds with DeepSeek, against 5–6 seconds and 382 output tokens with TypeSafe
-at an unknown price. Extrapolated sequentially to 247 green tests, that is
-roughly $15 and five to six hours against 22 to 25 minutes. The extrapolation
-assumes sequential execution and no retries.
+### Cost
+
+The two figures come from different kinds of source and are not equally firm.
+TypeSafe's is arithmetic on a rate the provider states in its own usage
+dashboard: $0.042 per million input tokens, output not billed. DeepSeek's is
+Weave's default-rate estimate for its parsed calls, made by a third party. Both
+count only successfully parsed responses, so both undercount a failed request.
+
+On these samples one investigation costs about **$0.00054** with TypeSafe and
+about **$0.06** with DeepSeek — a factor of 111 to 119. Extrapolated
+sequentially to the 247-test CI run the plan opens with, that is **13 cents and
+22–25 minutes against roughly $15 and five to six hours**. The extrapolation
+assumes sequential execution and no retries; a real CI job would parallelise and
+compress the wall-clock figures, not the cost.
+
+The gap is not token efficiency. Both providers consume a similar volume of
+input — 12,950 tokens per investigation against 15,585–16,193 — because they
+receive the same evidence through the same engine. Almost all of the difference
+is the rate, amplified by DeepSeek's reasoning output being billed while
+TypeSafe's output is not. TypeSafe emits 382 output tokens to DeepSeek's ten
+thousand, and that advantage does not even reach the invoice.
+
+This is the H3 question answered for one workflow: at these rates, investigating
+every green test in a suite is affordable with the cheaper model and a budget
+decision with the larger one. It says nothing about which is affordable for a
+suite of defects neither has seen.
 
 Receipts: `.scratch/evaluations/167ffe66-1509-4a8c-9407-45b0e457c896/evaluation.json`
 and `.scratch/evaluations/ca68d553-d572-47a1-b162-319e80c99c1a/evaluation.json`.
