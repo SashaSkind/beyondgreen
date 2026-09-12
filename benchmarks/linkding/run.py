@@ -17,18 +17,25 @@ CHECKOUT = ROOT / ".scratch" / "linkding"
 MANIFEST = json.loads((HERE / "manifest.json").read_text())
 
 
-def command(args, **kwargs):
-    return subprocess.run(args, cwd=CHECKOUT, check=True, **kwargs)
+def command(args, checkout=CHECKOUT, **kwargs):
+    return subprocess.run(args, cwd=checkout, check=True, **kwargs)
 
 
-def git_output(*args):
-    return command(["git", *args], capture_output=True, text=True).stdout.strip()
+def git_output(*args, checkout=CHECKOUT):
+    return command(
+        ["git", *args], checkout=checkout, capture_output=True, text=True
+    ).stdout.strip()
 
 
-def ensure_source():
-    if git_output("rev-parse", "HEAD") != MANIFEST["revision"]:
+def ensure_source(checkout=CHECKOUT, expected_patch=None):
+    if git_output("rev-parse", "HEAD", checkout=checkout) != MANIFEST["revision"]:
         raise RuntimeError("Linkding revision does not match the manifest")
-    if git_output("status", "--porcelain"):
+    if expected_patch is not None:
+        if git_output("diff", "HEAD", checkout=checkout) != expected_patch.strip():
+            raise RuntimeError("Mutation source differs from the recorded patch")
+        if git_output("ls-files", "--others", "--exclude-standard", checkout=checkout):
+            raise RuntimeError("Mutant checkout contains untracked source files")
+    elif git_output("status", "--porcelain", checkout=checkout):
         raise RuntimeError(
             "Linkding has source changes or untracked files; refusing to call this a clean baseline"
         )
@@ -57,11 +64,11 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run_test(args, environment, log):
+def run_test(args, environment, log, checkout=CHECKOUT):
     # Stop the entire uv/pytest/browser process group on interruption or timeout.
     with subprocess.Popen(
         args,
-        cwd=CHECKOUT,
+        cwd=checkout,
         env=environment,
         stdout=log,
         stderr=subprocess.STDOUT,
@@ -79,7 +86,7 @@ def run_test(args, environment, log):
             raise
 
 
-def validate_baseline(output):
+def observations(output):
     evidence = json.loads((output / "evidence.json").read_text())
     before = json.loads((output / "database-before.json").read_text())
     after = json.loads((output / "database-after.json").read_text())
@@ -140,6 +147,14 @@ def validate_baseline(output):
     ):
         raise RuntimeError("Archive POST did not produce an observed HTTP 200 response")
     bookmark_id = int(request["form"]["archive"][0])
+    for name in ("browser-0.zip", "page-after.png"):
+        if (output / name).stat().st_size == 0:
+            raise RuntimeError(f"Missing or empty {name}")
+    return before, after, bookmark_id, responses[0]["status"]
+
+
+def validate_baseline(output):
+    before, after, bookmark_id, status = observations(output)
     prior = {row["id"]: row for row in before["bookmarks"]}
     final = {row["id"]: row for row in after["bookmarks"]}
     if set(prior) != set(final) or not prior or bookmark_id not in prior:
@@ -168,21 +183,18 @@ def validate_baseline(output):
         or before["bookmark_tags"] != after["bookmark_tags"]
     ):
         raise RuntimeError("Baseline changed tags or bookmark/tag associations")
-    for name in ("browser-0.zip", "page-after.png"):
-        if (output / name).stat().st_size == 0:
-            raise RuntimeError(f"Missing or empty {name}")
     return {
         "accepted": True,
         "archived_bookmark_id": bookmark_id,
         "bookmark_count_before": len(prior),
         "bookmark_count_after": len(final),
-        "archive_http_status": responses[0]["status"],
+        "archive_http_status": status,
         "changes": changes,
     }
 
 
-def baseline():
-    ensure_source()
+def baseline(checkout=CHECKOUT, expected_patch=None, validator=validate_baseline):
+    ensure_source(checkout, expected_patch)
     run_id = (
         datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8]
     )
@@ -191,13 +203,14 @@ def baseline():
     environment = {
         **os.environ,
         "BG_RUN_DIR": str(output),
-        "PYTHONPATH": os.pathsep.join((str(HERE), str(CHECKOUT))),
+        "PYTHONPATH": os.pathsep.join((str(HERE), str(checkout))),
     }
     environment.pop("PYTEST_ADDOPTS", None)
     args = [
         "uv",
         "run",
         "--frozen",
+        "--no-sync",
         "pytest",
         MANIFEST["test"],
         "-o",
@@ -210,24 +223,28 @@ def baseline():
     ]
     metadata = {
         "run_id": run_id,
-        "kind": "clean_baseline",
+        "kind": "archive_delete_mutant" if expected_patch else "clean_baseline",
         **MANIFEST,
-        "source_test_sha256": digest(CHECKOUT / MANIFEST["test"].split("::")[0]),
-        "uv_lock_sha256": digest(CHECKOUT / "uv.lock"),
-        "npm_lock_sha256": digest(CHECKOUT / "package-lock.json"),
+        "source_test_sha256": digest(checkout / MANIFEST["test"].split("::")[0]),
+        "uv_lock_sha256": digest(checkout / "uv.lock"),
+        "npm_lock_sha256": digest(checkout / "package-lock.json"),
         "collector_sha256": digest(HERE / "beyond_green_linkding.py"),
+        "runner_sha256": digest(HERE / "run.py"),
+        "settings_sha256": digest(HERE / "beyond_green_settings.py"),
         "command": args,
         "started_at": datetime.now(timezone.utc).isoformat(),
     }
-    print(f"Capturing baseline in {output}", flush=True)
+    if expected_patch:
+        (output / "mutation.patch").write_text(expected_patch + "\n")
+    print(f"Capturing {metadata['kind']} in {output}", flush=True)
     try:
         with (output / "pytest.log").open("w") as log:
-            metadata["exit_code"] = run_test(args, environment, log)
+            metadata["exit_code"] = run_test(args, environment, log, checkout)
         print((output / "pytest.log").read_text())
-        ensure_source()
+        ensure_source(checkout, expected_patch)
         if metadata["exit_code"]:
             raise RuntimeError("Upstream test failed; see pytest.log")
-        metadata["validation"] = validate_baseline(output)
+        metadata["validation"] = validator(output)
     except (Exception, KeyboardInterrupt) as error:
         metadata["validation"] = {"accepted": False, "error": str(error)}
         raise
@@ -240,7 +257,8 @@ def baseline():
         }
         (output / "run.json").write_text(json.dumps(metadata, indent=2) + "\n")
     print(json.dumps(metadata["validation"], indent=2))
-    print(f"Baseline accepted: {output / 'run.json'}")
+    print(f"Run validated: {output / 'run.json'}")
+    return output
 
 
 if __name__ == "__main__":

@@ -66,8 +66,52 @@ from `is_archived=false` to `true`, preserved tag associations, and recorded
 HTTP 200 for `POST /bookmarks/action`. The initial captured run is
 `20260912T211644Z-46fba35b`; the final hardened runner also passed in 2.05 seconds
 as `20260912T212052Z-879ee993`. Rejection checks verified browser/collection
-errors, wrong test IDs, and missing phases cannot be accepted. This proves the clean baseline only; the deletion
-mutation and AI investigation are subsequent work.
+errors, wrong test IDs, and missing phases cannot be accepted. This establishes
+the clean baseline; the paired mutation experiment is described below.
+
+## Archive-to-delete experiment
+
+```sh
+npm run benchmark:linkding:mutation
+```
+
+This command creates a separate local clone at the pinned revision under
+`.scratch/linkding-mutants/`, reuses the installed Python environment and built
+assets without package syncing, and changes exactly one line in the archive
+view: `archive_bookmark(bookmark)` becomes `bookmark.delete()`. It then captures
+fresh clean and mutant runs with the same external collector. The clean
+checkout and existing run artifacts remain intact. The mutant checkout is
+retained for inspection; reruns create a new one.
+
+The comparison requires matching test, source revision, dependency locks,
+collector/settings/runner hashes, runtimes, and initial snapshots (excluding
+creation/modification timestamps). Both tests must pass without runtime or
+collection errors. The mutant must lose exactly the requested active bookmark
+and its tag associations, while preserving all other rows and tags. The clean
+baseline validator must reject that evidence specifically because a row was
+lost. `experiment_valid=true` means the injected defect was reproduced;
+`application_correct=false` records the incorrect application behavior.
+
+Verified pair on 2026-09-12:
+
+- Clean run `20260912T212935Z-40073ab3`: test passed in 2.14 seconds, archive
+  POST returned HTTP 200, and all nine bookmark rows remained.
+- Mutant run `20260912T212939Z-24d8f643`: the same test passed in 1.55 seconds
+  and the same POST returned HTTP 200, but only eight rows remained. Bookmark 2
+  and one bookmark/tag association were deleted.
+- The final screenshots were byte-identical. Both showed Bookmark 1 and
+  Bookmark 3, so this final page view did not expose the lost record.
+
+`comparison.json` in the mutant run directory links both evidence bundles;
+`mutation.patch` records the exact source change. Mutation labels and the
+comparison report are experiment ground truth, separate from the collector's
+evidence. Keep those labels out of future model inputs.
+
+This is a demonstrated **single-test assertion gap**, not a claim that the full
+upstream suite misses the defect. No AI model was used to identify the row loss;
+the next stage is to investigate this evidence with TypeSafe and the critic /
+evidence-retrieval loop. The two timings are individual pytest durations, not a
+performance comparison.
 
 Sources: [upstream test](https://github.com/sissbruecker/linkding/blob/eb98e67d942436b8ad0207dae5fd99a268463a0b/bookmarks/tests_e2e/e2e_test_bookmark_page_partial_updates.py#L101-L110),
 [browser helper](https://github.com/sissbruecker/linkding/blob/eb98e67d942436b8ad0207dae5fd99a268463a0b/bookmarks/tests_e2e/helpers.py),

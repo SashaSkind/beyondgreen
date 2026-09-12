@@ -9,7 +9,9 @@ regressions missed by passing E2E assertions. See the
 The [benchmark selection](docs/research/benchmark-selection.md) starts with
 Linkding, then Vendure. Source reviews identify candidate assertion gaps.
 The [Linkding clean baseline](benchmarks/linkding/README.md) now passes with
-captured browser, HTTP, and database evidence; mutated runs remain to be proven.
+captured browser, HTTP, and database evidence. The
+[archive-to-delete experiment](benchmarks/linkding/README.md#archive-to-delete-experiment)
+also proves the same test stays green while the bookmark is deleted.
 
 ## W&B Weave connection
 
