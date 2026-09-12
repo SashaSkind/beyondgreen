@@ -171,6 +171,7 @@ export async function loadLinkdingEvidence(currentDir: string, baselineDir: stri
           requirements: [
             "Retain the existing bookmark and set is_archived to true.",
             "Update date_modified and save the bookmark; preserve its other stored fields.",
+            "Preserve all other bookmarks, including those owned by other users; only the requested bookmark is saved.",
             "Preserve tags and bookmark/tag associations; this operation does not remove them.",
           ],
           source: { citation: SOURCE, function: "archive_bookmark", implementation: "Sets is_archived = True, sets date_modified = timezone.now(), saves, and returns the bookmark." },

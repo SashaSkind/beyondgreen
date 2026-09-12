@@ -87,7 +87,7 @@ export async function investigate(source: EvidenceSource, judge: Judge, options:
       if (assessment.choice === "supported" && assessment.confidence >= minConfidence && complete && hypothesis !== "unknown") {
         const verified = await ask("Verifier", {
           verdict: {
-            type: "choice", instructions: "Independently check actual target-row state against the retrieved operation contract. Do not accept the hypothesis merely because an earlier role chose it. Scope is this recorded operation only.",
+            type: "choice", instructions: "Independently check actual before/after rows and relationships against the retrieved operation contract, including required preservation of unrelated state. Do not accept the hypothesis merely because an earlier role chose it. Scope is this recorded operation only.",
             criteria: {
               regression: "Concrete retrieved state violates the operation contract despite the passing test.",
               clean: "Retrieved state satisfies the operation contract for this observed operation.",
@@ -95,8 +95,8 @@ export async function investigate(source: EvidenceSource, judge: Judge, options:
             },
           },
           grounding: {
-            type: "choice", instructions: "Check whether the proposed verdict can be established from recorded target state and the operation contract, without speculation or aggregate counts alone.",
-            criteria: { sufficient: "Contract and before/after target state establish the outcome.", insufficient: "Evidence is missing, conflicting, or too indirect." },
+            type: "choice", instructions: "Check whether the proposed verdict can be established from recorded target and other affected state and the operation contract, without speculation or aggregate counts alone.",
+            criteria: { sufficient: "Contract and before/after state establish the outcome.", insufficient: "Evidence is missing, conflicting, or too indirect." },
           },
         });
         const { verdict, grounding } = verified.answers;
