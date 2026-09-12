@@ -115,7 +115,7 @@ def compare(clean, mutant):
     }
 
 
-def experiment():
+def create_checkout():
     ensure_source()
     # Fresh independent git metadata and application files; the original stays clean.
     checkout = ROOT / ".scratch" / "linkding-mutants" / uuid4().hex[:12]
@@ -136,6 +136,11 @@ def experiment():
     for directory in ("assets", "favicons", "previews"):
         (checkout / "data" / directory).mkdir(parents=True, exist_ok=True)
     ensure_source(checkout)
+    return checkout
+
+
+def experiment():
+    checkout = create_checkout()
 
     source = checkout / "bookmarks/views/bookmarks.py"
     original = source.read_text()

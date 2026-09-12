@@ -223,7 +223,7 @@ def baseline(checkout=CHECKOUT, expected_patch=None, validator=validate_baseline
     ]
     metadata = {
         "run_id": run_id,
-        "kind": "archive_delete_mutant" if expected_patch else "clean_baseline",
+        "kind": "source_variant" if expected_patch else "clean_baseline",
         **MANIFEST,
         "source_test_sha256": digest(checkout / MANIFEST["test"].split("::")[0]),
         "uv_lock_sha256": digest(checkout / "uv.lock"),

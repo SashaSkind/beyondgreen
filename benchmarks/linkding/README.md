@@ -117,3 +117,27 @@ durations, not a performance comparison.
 Sources: [upstream test](https://github.com/sissbruecker/linkding/blob/eb98e67d942436b8ad0207dae5fd99a268463a0b/bookmarks/tests_e2e/e2e_test_bookmark_page_partial_updates.py#L101-L110),
 [browser helper](https://github.com/sissbruecker/linkding/blob/eb98e67d942436b8ad0207dae5fd99a268463a0b/bookmarks/tests_e2e/helpers.py),
 [archive behavior](https://github.com/sissbruecker/linkding/blob/eb98e67d942436b8ad0207dae5fd99a268463a0b/bookmarks/services/bookmarks.py#L93-L98).
+
+## Six-case comparison suite
+
+Run `python3 benchmarks/linkding/suite.py` to capture a new six-case suite:
+
+- Unchanged archive: clean reference.
+- Archive followed by `refresh_from_db()`: harmless source-change control.
+- Archive replaced by deletion: row and association loss.
+- Archive followed by toggling the target's unread flag: unrelated field corruption.
+- Archive followed by clearing its tags: association loss with unchanged row count.
+- Archive followed by toggling another owner's unread flag: state change outside the requested bookmark and account.
+
+Each variant gets a fresh checkout and test database. The selected upstream test
+and assertions remain unchanged. Exact state validators establish ground truth
+and reject extra changes; the suite also checks matching source, dependency,
+collector, runtime, and initial-fixture provenance. Labels and artifact hashes
+are written to `.scratch/suites/<id>/suite.json` only after all cases succeed.
+An interrupted suite leaves `suite.partial.json`, which is not a completed suite.
+These are four related defect patterns in one archive workflow, not four
+independent applications or broad production-regression coverage.
+
+All six cases passed the browser test on 2026-09-12. The three new defects and
+the harmless control retained all nine bookmark rows. Validator checks run with
+`python3 -m unittest discover -s benchmarks/linkding -p test_suite.py`.
