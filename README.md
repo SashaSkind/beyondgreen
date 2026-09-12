@@ -25,3 +25,22 @@ ignored by Git; keep API keys there or in your environment.
 Run `npm run check` to type-check the script.
 
 Reference: [Weave quickstart](https://docs.wandb.ai/weave/quickstart).
+
+## Model connections
+
+Set `TYPESAFE_API_KEY` in `.env`. The TypeSafe model defaults to `jev-latest`;
+set `TYPESAFE_MODEL` to select a specific available version.
+
+The comparison model defaults to `deepseek-ai/DeepSeek-V4-Pro-0813` through
+W&B Inference, using the existing `WANDB_API_KEY`. Set
+`WANDB_INFERENCE_PROJECT` to the full `team/project` with inference access.
+`WANDB_INFERENCE_MODEL` can override the model ID.
+
+Run `npm run models:check` to send one small synthetic evidence question to each
+provider. This makes billable model calls. The command validates the answers,
+reports token usage and request latency, and saves a receipt in the ignored
+`.scratch/model-connectivity.json`. This is a connection check, not an accuracy
+or performance benchmark, and it does not send traces to Weave.
+
+References: [TypeSafe HTTP API](https://docs.typesafe.ai/api.md),
+[W&B chat completions](https://docs.wandb.ai/inference/api-reference/chat-completions).

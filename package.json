@@ -8,7 +8,8 @@
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "weave:check": "node --env-file-if-exists=.env scripts/check-weave.ts"
+    "weave:check": "node --env-file-if-exists=.env scripts/check-weave.ts",
+    "models:check": "node --env-file-if-exists=.env scripts/check-models.ts"
   },
   "dependencies": {
     "weave": "^0.16.8"
