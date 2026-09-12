@@ -7,8 +7,9 @@ regressions missed by passing E2E assertions. See the
 [MVP plan](Beyond%20Green%20%E2%80%94%20Hackathon%20MVP%20Plan.md).
 
 The [benchmark selection](docs/research/benchmark-selection.md) starts with
-Linkding, then Vendure. Source reviews identify candidate assertion gaps;
-baseline and mutated runs still need to prove them.
+Linkding, then Vendure. Source reviews identify candidate assertion gaps.
+The [Linkding clean baseline](benchmarks/linkding/README.md) now passes with
+captured browser, HTTP, and database evidence; mutated runs remain to be proven.
 
 ## W&B Weave connection
 

@@ -9,7 +9,9 @@
   "scripts": {
     "check": "tsc --noEmit",
     "weave:check": "node --env-file-if-exists=.env scripts/check-weave.ts",
-    "models:check": "node --env-file-if-exists=.env scripts/check-models.ts"
+    "models:check": "node --env-file-if-exists=.env scripts/check-models.ts",
+    "benchmark:linkding:setup": "python3 benchmarks/linkding/run.py --setup",
+    "benchmark:linkding": "python3 benchmarks/linkding/run.py"
   },
   "dependencies": {
     "weave": "^0.16.8"
