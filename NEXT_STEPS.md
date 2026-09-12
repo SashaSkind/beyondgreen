@@ -54,11 +54,13 @@ failing a test.
    the beat each lands, and fallbacks for a failed call or a dead network.
 4. [ ] **Draft the slides**, two at most: the problem, the loop, the finding,
    the comparison.
-5. [ ] **Close the cost gap.** Find a published TypeSafe rate and compute
-   per-investigation cost for both providers. Absent a rate, record that no
-   comparable rate exists and keep latency and tokens as the economic evidence.
-   H3 — that cheap intelligence makes exhaustive investigation practical — is an
-   economic claim, and latency is currently its only support.
+5. [x] **The cost gap cannot be closed from public sources.** TypeSafe publishes
+   no rate: `typesafe.ai/pricing` returns 404, the
+   [API reference](https://docs.typesafe.ai/api.md) documents no billing, and
+   responses carry only `usage` token counts. So `costUsd` stays null, and
+   latency plus tokens remain the economic evidence for H3 — that cheap
+   intelligence makes exhaustive investigation practical. Ask TypeSafe directly
+   for a rate if a dollar figure is needed for the submission.
 6. [x] **The TypeSafe validation failure is root-caused and fixed.** Providers
    round probabilities to two decimals, so a well-formed distribution can sum to
    0.99; the validator allowed only 0.001 of drift. Replaying a saved payload
