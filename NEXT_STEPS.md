@@ -53,7 +53,9 @@ failing a test.
 3. [x] **Write the demo runbook.** [DEMO.md](DEMO.md) carries the four commands,
    the beat each lands, and fallbacks for a failed call or a dead network.
 4. [ ] **Draft the slides**, two at most: the problem, the loop, the finding,
-   the comparison.
+   the comparison. A published explainer page already carries the loop diagram,
+   the model-state boundary, a real nine-step trajectory, and the measured
+   table; reuse its figures rather than inventing new ones.
 5. [x] **The cost gap cannot be closed from public sources.** TypeSafe publishes
    no rate: `typesafe.ai/pricing` returns 404, the
    [API reference](https://docs.typesafe.ai/api.md) documents no billing, and
@@ -67,13 +69,24 @@ failing a test.
    never reproduced it, because the trigger is the sampled probabilities rather
    than the input — which is why 25 earlier replays came back clean. Traced runs
    failed 3 of 8 before the fix and 0 of 18 after.
-7. [ ] **DeepSeek still exhausts its 8,192-token budget** on
-   `archive_deletes_bookmark`. Shrink the state payload before raising the
-   budget again; the deletion case sends the largest snapshots.
-8. [ ] **Re-record the comparison.** The published numbers were measured under
-   the too-strict validator, so some abstentions were parser artifacts rather
-   than model behaviour. Re-run both providers on the unchanged suite and
-   restate the results.
+7. [x] **DeepSeek's truncation did not recur.** It resolved
+   `archive_deletes_bookmark` in both studies after the validator fix. Since the
+   engine records every judge failure as `model_error`, the receipts never
+   separated a rounding rejection from a truncated response, so the earlier
+   attribution to the token budget was not established. Watch for
+   `finish_reason=length` returning; the deletion case sends the largest
+   snapshots and would truncate first.
+8. [x] **Comparison re-recorded.** Two fresh studies on the unchanged suite, one
+   at the corrected diagnostic labels. TypeSafe 4/6 twice with the same two
+   abstentions; DeepSeek 6/6 twice; no incorrect verdict or false positive in 24
+   investigations. Weave prices DeepSeek at about six cents per investigation and
+   has no rate for `jev-1.13.0`. All four studies are in
+   [linkding-comparison-results.json](docs/experiments/linkding-comparison-results.json).
+9. [ ] **Find a held-out historical case.** A real fixed bug whose feature
+    already had a passing E2E test, where the fix commit adds the missing
+    assertion. This is the one thing that answers "the cases were written to
+    suit the investigator". Research is underway across five application
+    domains; results land in `docs/research/benchmark-known-bugs-*.md`.
 
 ## Human steps
 

@@ -92,8 +92,8 @@ The adapter now allows 8,192 completion tokens and 90 seconds per request and
 reports token-limit failures distinctly in Weave. Reasoning stays enabled; the
 prompts and investigation policy remain unchanged. The first pass is retained.
 The TypeSafe response-validation failure did not recur in 25 bounded diagnostic
-requests; its exact cause remains unresolved and no speculative parser change
-was made. Diagnostic requests are excluded from evaluation metrics and can incur
+requests, and was left unexplained at the time. It is now root-caused below.
+Diagnostic requests are excluded from evaluation metrics and can incur
 additional usage.
 
 ## Follow-up: 8,192-token DeepSeek budget
@@ -126,15 +126,103 @@ no TypeSafe rate was available. Those estimates exclude failed calls and
 diagnostic replays and are not total billing; a provider cost comparison remains
 unavailable.
 
+## Root cause of the response-validation failures
+
+The two earlier passes attributed their abstentions to the models, or to
+DeepSeek's response budget. Live sampling of `jev-1.13.0` established a
+different cause. Providers report probabilities rounded to two decimals, so a
+well-formed distribution can sum to 0.99 or 1.01, while the shared validator
+admitted only 0.001 of drift. Across 62 sampled answers, 59 summed to exactly
+1.00, and the three that summed to 0.99 were the three rejected responses. Every
+rejected body was otherwise valid.
+
+Replaying a saved request never reproduced this, which is why the 25 earlier
+diagnostic replays came back clean: the trigger is the sampled probabilities,
+not the request. Driving the engine against a fixed capture while recording raw
+response bodies reproduced it in 3 of 8 investigations, and in 0 of 18 after the
+tolerance was widened to half a rounding unit per option, with guard tests
+retaining rejection of distributions too far from one to be rounding.
+
+`parseJudgment` is shared, so this affected both providers, and the engine
+records every judge failure as `model_error`. The receipts therefore cannot
+separate a rounding rejection from a truncated DeepSeek response, and the
+earlier attribution of DeepSeek's failures to its token budget is not
+established by those receipts. One bounded replay did reproduce
+`finish_reason=length`, so both causes were real; their relative share is
+unknown.
+
+## Corrected abstention reporting
+
+Both surviving TypeSafe abstentions first reported `incomplete_evidence`
+although the receipts show both required sources had been retrieved. The Critic
+had failed the 0.8 gate — `supported` at 0.65 in one case, `refuted` at 0.46 in
+the other — and then asked for no further evidence, which the engine reported as
+missing evidence. The reason now distinguishes `critic_unconvinced` from a
+genuinely missing source and from a reselected key. Study three predates that
+label and study four uses it; the verdicts are identical.
+
+## Studies three and four: after the validator fix
+
+Both studies use the same six captures, questions, contract, engine, four-round
+limit and 0.8 threshold. Study four additionally runs at the corrected
+diagnostic labels. Each is one sample per capture per provider.
+
+| Two runs | TypeSafe `jev-1.13.0` | DeepSeek-V4-Pro-0813 |
+|---|---|---|
+| Correct verdicts | 4/6 · 4/6 | 6/6 · 6/6 |
+| Abstentions | 2 · 2 | 0 · 0 |
+| Incorrect verdicts | 0 · 0 | 0 · 0 |
+| False positives on controls | 0 · 0 | 0 · 0 |
+| Mean latency | 5.32 s · 6.11 s | 92.54 s · 78.79 s |
+| Output tokens per investigation | 382 · 382 | 11,229 · 9,923 |
+| Weave cost estimate per investigation | no rate available | $0.0649 · $0.0605 |
+
+TypeSafe abstained on exactly `archive_toggles_unread` and
+`archive_changes_other_owner` in both runs, for the same reason, with both
+required sources in hand. It confirmed deletion and tag loss and accepted both
+controls. That abstention set is therefore a property of those two defect
+shapes under these settings, not sampling noise. DeepSeek resolved all six in
+both runs, including the cross-owner case.
+
+Neither provider issued an incorrect verdict in 24 investigations, and neither
+produced a false positive on a control. The distinction that matters for a CI
+gate is the failure mode: TypeSafe's is silence, DeepSeek's was latency and
+cost.
+
+Weave prices DeepSeek's parsed calls at default rates and has no rate for
+`jev-1.13.0`, so the missing dollar figure is upstream rather than a gap in this
+harness. On these samples one investigation costs about six cents and 79–93
+seconds with DeepSeek, against 5–6 seconds and 382 output tokens with TypeSafe
+at an unknown price. Extrapolated sequentially to 247 green tests, that is
+roughly $15 and five to six hours against 22 to 25 minutes. The extrapolation
+assumes sequential execution and no retries.
+
+Receipts: `.scratch/evaluations/167ffe66-1509-4a8c-9407-45b0e457c896/evaluation.json`
+and `.scratch/evaluations/ca68d553-d572-47a1-b162-319e80c99c1a/evaluation.json`.
+All twenty-four investigation traces and all four evaluation roots were read
+back from Weave as completed.
+
 ## Limits
 
 The cases were designed alongside the investigator and contract; they are not
 held out. Four related mutations of one workflow are not four independent
-regression classes across products. The clean controls cover only two examples.
-Repeated model runs on these captures measure variability, not new application
-coverage. The next evaluation should add independent workflows, more clean
-controls, and pricing/failed-response usage accounting before making quality or
-economic claims.
+regression classes across products. The clean controls cover only two examples,
+so zero false positives across four control investigations is reassuring rather
+than a measured rate. Repeated model runs on these captures measure variability,
+not new application coverage.
+
+Two samples per provider establish that the abstention set is reproducible; they
+do not establish its rate, and confidence remains a measure of distribution
+concentration rather than calibrated correctness. Regression classes D
+(background failure), E (state leakage) and F (missing telemetry) from the plan
+are not covered at all by these six captures.
+
+The strongest available fix for the held-out problem is a historical one: a
+real fixed bug in an application whose existing E2E test passed anyway, where
+the fix commit adds the assertion that was missing. Such a case cannot be
+accused of having been written to suit this investigator. That search is the
+next piece of work, alongside independent workflows, more clean controls, and
+usage accounting for failed responses.
 
 References: [W&B chat completions](https://docs.wandb.ai/inference/api-reference/chat-completions),
 [W&B reasoning controls](https://docs.wandb.ai/inference/response-settings/reasoning),
