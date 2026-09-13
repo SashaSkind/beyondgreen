@@ -63,12 +63,10 @@ is the false `SENT` claim on the row.
 `recipientsToNotify.filter(...)` with the result discarded. The behavioural
 change comes from the two deleted lines in the direct-template path.
 
-**Beyond Green has not investigated this capture.** No Documenso collector
-exists yet, so nothing here was normalised into evidence or shown to a model.
-This experiment establishes that the gap is real and reproducible; it does not
-show that the investigator detects it. That is the next step, and it needs a
-collector that records HTTP traffic and snapshots Postgres before teardown, in
-the shape [evidence.ts](../../src/investigation/evidence.ts) expects.
+**The gap being real is not the same as the investigator finding it.** This
+section establishes only that the gap is real and reproducible. A collector and
+adapter were written afterwards, and the investigation results are below: no
+provider yet discriminates the two builds.
 
 **One capture per build, on one machine.** No repetition, no timing claims.
 
