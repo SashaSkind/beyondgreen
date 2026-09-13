@@ -79,3 +79,51 @@ demonstrates that the mechanism has something real to find: a production bug,
 reported by a user, in a project with 129 browser specs, sitting underneath a
 test that already held the corrupted row in its hands and checked the wrong two
 columns.
+
+## The investigator does not yet detect it
+
+Executed 2026-09-12, after a Documenso evidence adapter and capture harness were
+added. Both captures were produced by the harness from the builds above, and the
+initial observation handed to the models is identical for the two: the test
+passed, the operation, and eight recipients created. Distinguishing them requires
+retrieving evidence.
+
+| Capture | TypeSafe | DeepSeek |
+|---|---|---|
+| Defective | insufficient (`critic_unconvinced`, 0.54) | **regression** (verified, 0.93) |
+| Fixed control | insufficient (`critic_unconvinced`, 0.24) | **regression** (verified, 0.80) |
+
+**DeepSeek called the fixed build a regression too, so its finding on the
+defective build is not a detection.** It is consistent with a model that calls
+this scenario a violation whatever the persisted state. Had only the defective
+capture been run, this would have been reported as a success; the control is the
+only reason it was not.
+
+TypeSafe abstained on both, at 0.54 and 0.24 confidence. That is the safe
+failure, and on the clean control it is the correct one, but it does not
+discriminate either.
+
+The likely cause is the contract. In this scenario *neither* build ever
+dispatches a signing request, because the seeded recipients lack signature
+fields and the send path throws on both. The builds differ only in whether the
+recipient row falsely claims a dispatch occurred. The contract in
+[documenso-evidence.ts](../../src/investigation/documenso-evidence.ts) does not
+draw that distinction sharply enough for a model to act on, and a reader can
+reasonably conclude from either capture that a next signer who should have been
+notified was not.
+
+No attempt was made to tune the contract until the verdicts came out right.
+Rewriting it against known outcomes would manufacture the result this case
+exists to test, and the fix belongs in a contract written from the operation's
+intent and then evaluated once.
+
+### What this establishes
+
+- The engine generalises. A second application reached a verdict through the
+  same loop with no engine change, declaring its own catalog and its own
+  mandatory sources, and the models autonomously retrieved a third source
+  (`delivered_mail`) that the first benchmark does not have.
+- Contract quality, not loop mechanics, is the binding constraint on detection.
+  This is the adoption cost to plan for.
+- Abstention and a clean control are load-bearing. One capture without the other
+  would have produced a confident and wrong claim.
