@@ -6,8 +6,19 @@ A post-test investigation loop that gathers and challenges evidence to detect
 regressions missed by passing E2E assertions. See the
 [MVP plan](Beyond%20Green%20%E2%80%94%20Hackathon%20MVP%20Plan.md).
 
+A real, user-reported bug reproduces the same shape without anyone here
+designing it: Documenso's own next-signer tests pass on both the defective and
+the fixed build, and only the defective one leaves recipient rows claiming a
+signing request was sent that never was. See the
+[held-out reproduction](docs/experiments/documenso-held-out.md).
+
+To run the three-minute demo, follow [DEMO.md](DEMO.md). Remaining work and the
+invariants that protect these results are in [NEXT_STEPS.md](NEXT_STEPS.md).
+
 The [benchmark selection](docs/research/benchmark-selection.md) starts with
-Linkding, then Vendure. Source reviews identify candidate assertion gaps.
+Linkding, then Vendure, and now records
+[held-out historical cases](docs/research/benchmark-selection.md#second-round-held-out-historical-cases)
+across five application domains. Source reviews identify candidate assertion gaps.
 The [Linkding clean baseline](benchmarks/linkding/README.md) now passes with
 captured browser, HTTP, and database evidence. The
 [archive-to-delete experiment](benchmarks/linkding/README.md#archive-to-delete-experiment)

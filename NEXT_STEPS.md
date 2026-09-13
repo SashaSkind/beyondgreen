@@ -54,10 +54,11 @@ failing a test.
    reached a verified verdict, including 6 of 6 `clean` on the control.
 3. [x] **Write the demo runbook.** [DEMO.md](DEMO.md) carries the four commands,
    the beat each lands, and fallbacks for a failed call or a dead network.
-4. [ ] **Draft the slides**, two at most: the problem, the loop, the finding,
-   the comparison. A published explainer page already carries the loop diagram,
-   the model-state boundary, a real nine-step trajectory, and the measured
-   table; reuse its figures rather than inventing new ones.
+4. [x] **Slides drafted.** Two published slides — the hidden regression, then
+   the economics — alongside a published explainer page carrying the loop
+   diagram, the model-state boundary, a real nine-step trajectory and the
+   measured table. Both are private artifacts on claude.ai; ask Sasha for the
+   links, and reuse their figures rather than inventing new ones.
 5. [x] **The cost gap is closed.** No public page carries a TypeSafe rate —
    `typesafe.ai/pricing` returns 404 and the
    [API reference](https://docs.typesafe.ai/api.md) documents no billing — but
