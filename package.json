@@ -27,7 +27,10 @@
     "sweep": "node --env-file-if-exists=.env scripts/threshold-sweep.ts",
     "disagreements": "node --env-file-if-exists=.env scripts/disagreements.ts",
     "cascade": "node --env-file-if-exists=.env scripts/cascade.ts",
-    "site:build": "node scripts/build-site.ts"
+    "site:build": "node scripts/build-site.ts",
+    "demo:typesafe": "node --env-file-if-exists=.env scripts/cascade.ts --policy typesafe",
+    "demo:cascade": "node --env-file-if-exists=.env scripts/cascade.ts --policy cascade",
+    "demo:deepseek": "node --env-file-if-exists=.env scripts/cascade.ts --policy deepseek"
   },
   "dependencies": {
     "weave": "^0.16.8"
