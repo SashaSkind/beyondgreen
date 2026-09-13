@@ -23,6 +23,7 @@
     "test:ui": "playwright test",
     "bp:prepare": "node scripts/prepare-bp-cleanup.ts",
     "bp:replay": "node --env-file-if-exists=.env scripts/replay-bp-cleanup.ts",
+    "bp:run": "node --env-file-if-exists=.env scripts/run-bp-cleanup.ts",
     "sweep": "node --env-file-if-exists=.env scripts/threshold-sweep.ts",
     "disagreements": "node --env-file-if-exists=.env scripts/disagreements.ts",
     "cascade": "node --env-file-if-exists=.env scripts/cascade.ts"
