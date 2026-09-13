@@ -2,27 +2,84 @@
 
 Your tests passed. We check what they missed.
 
-A post-test investigation loop that gathers and challenges evidence to detect
-regressions missed by passing E2E assertions. See the
-[MVP plan](Beyond%20Green%20%E2%80%94%20Hackathon%20MVP%20Plan.md).
+After an end-to-end test passes, a loop of typed agents investigates the evidence
+that test left behind and decides whether the system actually behaved correctly.
+Nobody writes prose. Every answer is a choice from a list with a probability
+attached, so every branch is ordinary code reading an enumerated value.
 
-A real, user-reported bug reproduces the same shape without anyone here
-designing it: Documenso's own next-signer tests pass on both the defective and
-the fixed build, and only the defective one leaves recipient rows claiming a
-signing request was sent that never was. See the
-[held-out reproduction](docs/experiments/documenso-held-out.md).
+## The loop
 
-To run the three-minute demo, follow [DEMO.md](DEMO.md). Remaining work and the
-invariants that protect these results are in [NEXT_STEPS.md](NEXT_STEPS.md).
+```mermaid
+flowchart LR
+  S[Scout] -->|typed hypothesis| C[Critic]
+  C -->|gate shut| E[Evidence]
+  E -->|retrieve one source| I[Investigator]
+  I -->|revised hypothesis| C
+  C -->|all four gate clauses hold| V[Verifier]
+  V --> O([regression / clean / insufficient])
+```
 
-The [benchmark selection](docs/research/benchmark-selection.md) starts with
-Linkding, then Vendure, and now records
-[held-out historical cases](docs/research/benchmark-selection.md#second-round-held-out-historical-cases)
-across five application domains. Source reviews identify candidate assertion gaps.
-The [Linkding clean baseline](benchmarks/linkding/README.md) now passes with
-captured browser, HTTP, and database evidence. The
-[archive-to-delete experiment](benchmarks/linkding/README.md#archive-to-delete-experiment)
-also proves the same test stays green while the bookmark is deleted.
+A Scout proposes a hypothesis. A Critic attacks it and picks what to read next.
+An Investigator revises. At most four rounds. Only when all four gate clauses
+hold in the same round does a separate Verifier get a vote, and it can veto:
+
+```js
+assessment.choice === "supported"
+  && assessment.confidence >= minConfidence   // 0.80 by default
+  && complete                                 // every required source actually read
+  && hypothesis !== "unknown"
+```
+
+The model is never asked whether it may conclude. Ten exits exist and nine of
+them are refusals, each recording its own reason, so a receipt says *why* a run
+gave up. Three of the five steps can end a run without a verdict.
+[engine.ts](src/investigation/engine.ts) is the whole loop in 130 lines.
+
+## Measured
+
+Six captures of one archive workflow, two clean controls and four defects, three
+of which preserve the bookmark count so counting rows cannot find them. All six
+pass the same unmodified upstream browser test and all six final screenshots are
+byte-identical. Two independent runs per provider.
+
+| Per investigation | TypeSafe `jev-1.13.0` | DeepSeek-V4-Pro |
+|---|---|---|
+| Correct verdicts | 4/6 twice | 6/6 twice |
+| Wrong verdicts | 0 | 0 |
+| False positives | 0 | 0 |
+| Latency | 5.3 – 6.1 s | 78.8 – 92.5 s |
+| Output tokens | 382 | 9,900 – 11,200 |
+| Cost | $0.00054 | $0.0605 – 0.0649 |
+
+Neither model issued an incorrect verdict in 24 investigations. Investigating
+250 green tests costs **14 cents** with the cheap provider, **$5.36** with a
+cascade that escalates only what it refuses to answer, and **$15.67** with the
+larger model alone. The cascade reaches 6/6.
+
+Full results and what they do not establish:
+[provider comparison](docs/experiments/linkding-comparison.md) ·
+[loop policy](docs/experiments/loop-policy.md) ·
+[held-out reproduction](docs/experiments/documenso-held-out.md)
+
+## A real bug nobody here designed
+
+The standing objection to a benchmark like this is that its defects were written
+alongside the investigator that finds them, so we reproduced one that was not.
+[documenso#2485](https://github.com/documenso/documenso/issues/2485) shipped in
+2.6.0, and its own Playwright test loads the corrupted row and asserts the wrong
+two columns. Both builds pass; only the defective one claims a signing request
+was sent that never was. The investigator does not yet separate them, and
+[the write-up](docs/experiments/documenso-held-out.md) says so.
+
+## Start here
+
+`npm ci`, then `npm run ui` opens the local viewer over twelve recorded
+investigations with no API keys. [DEMO.md](DEMO.md) is the three-minute demo
+runbook. [NEXT_STEPS.md](NEXT_STEPS.md) carries the remaining work and the
+invariants that protect these results. The
+[MVP plan](Beyond%20Green%20%E2%80%94%20Hackathon%20MVP%20Plan.md) is the
+original spec, and [benchmark selection](docs/research/benchmark-selection.md)
+records why Linkding came first and which held-out cases come next.
 
 ## Local investigation viewer
 
@@ -74,6 +131,15 @@ logs and local provenance stay private. Each trace is read back to verify its
 completed investigation and child calls. Tracing is off when the flag is omitted,
 and a dry run makes no network calls even with `--trace`. Receipts stay beside the
 private packet; open their `evaluation.json` in the local viewer for trace links.
+
+`npm run bp:run -- --repo <private-repo> --spec <C800732|C800738-partB>
+[--baseline-fingerprint sha256:...] [--dry-run]` runs that repository's own
+Playwright spec live instead of replaying saved logs. A reporter inside its
+Playwright process writes a projection beside the raw diagnostics, so the
+investigation never receives the private logs. The investigation runs in a
+bounded child process, which keeps a slow provider or a trace failure from
+interrupting Playwright cleanup or replacing its exit status. `--send-to-typesafe`
+and `--trace` behave as above.
 
 This is a development pair, not a reliability benchmark. It checks recorded worker
 cleanup only; it lacks independent product logs and exact run-time spec revisions.
@@ -203,3 +269,34 @@ rather than efficiency. See the
 [provider comparison](docs/experiments/linkding-comparison.md) for all four
 studies, the validator defect that invalidated the earlier abstention counts,
 and the limits these six captures cannot exceed.
+
+## Tune the loop from its own traces
+
+Four commands turn recorded runs into policy. None of them touches the operation
+contract, which is the part that needs a human. Results and limits:
+[loop policy](docs/experiments/loop-policy.md).
+
+```sh
+# Escalate only what the cheap provider refuses to answer.
+npm run cascade -- --suite <suite.json> [--escalateOn insufficient,regression]
+
+# Re-run the whole suite at several acceptance thresholds and measure each.
+npm run sweep -- --suite <suite.json> [--thresholds 0.3,0.5,0.8]
+
+# Collect every case where two providers disagreed. Needs no ground truth.
+npm run disagreements -- [--publish]
+
+# Project what the same loop would cost on models never run here.
+npm run cost:project -- <evaluation.json...> [--tests 250]
+```
+
+The cascade reaches 6/6 by escalating 2 of 6, at a third of the larger model's
+cost. The sweep costs about two cents for 42 investigations and shows the 0.80
+default is conservative on this suite. Across four studies the providers never
+contradicted each other: all six disagreements were one of them giving up, which
+is exactly what a cascade fills.
+
+Two cautions. Tuning a threshold on the same six cases you measure is
+overfitting, so treat the sweep as a lead rather than a setting to ship. And a
+cascade's accuracy is bounded by its most capable tier, which returned a false
+positive on the Documenso control.
