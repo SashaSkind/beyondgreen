@@ -48,6 +48,35 @@ Weave links open only when clicked.
 For browser checks, run `npx playwright install chromium` once, then
 `npm run test:ui`. See [DESIGN.md](DESIGN.md) for the design rules.
 
+## Private worker-cleanup pilot
+
+`npm run bp:prepare -- --repo <private-repo> --manifest <relative-sha256-file>
+--run-log <relative-log> --reference-log <relative-log> --run-tests <count>
+--reference-tests <count> --contract-file <relative-spec>` prepares a narrow
+offline pilot from two complete passing Playwright reporter files. Paths are
+relative to the private repository. The supported scenario starts with the
+designated baseline license on two workers and promises to restore it after
+cleanup. Missing phases, failures, skips, changed source files, and an invalid
+reference are rejected.
+
+Generated packets stay in that repository's `scratch/beyond-green-cleanup-*`
+directory. `provenance.json` retains source hashes, line references, and private
+identity mappings. `outbound-preview.json` shows the pseudonymized observations
+and contract available to the investigator. Neither raw logs nor diagnoses are
+part of that model input.
+
+`npm run bp:replay -- --packet <private-packet-directory>` validates the pair
+without network calls. Once provider use is authorized, add `--send-to-typesafe`
+to investigate the reference and candidate using the existing loop. This command
+uses TypeSafe directly, with **no W&B/Weave tracing**. Receipts stay beside the
+private packet; open their `evaluation.json` in the local viewer.
+
+This is a development pair, not a reliability benchmark. It checks recorded worker
+cleanup only; it lacks independent product logs and exact run-time spec revisions.
+The reference is a different workflow with the same cleanup promise and is reused
+as its own context when investigated. The extractor and adapter are generic code;
+private source captures and recorded pilot results are not committed here.
+
 ## W&B Weave connection
 
 Requires Node.js 24 or newer.
