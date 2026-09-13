@@ -281,28 +281,78 @@ assertReloads(0)</b></pre>
   <section class="slide">
     <div class="inner">
       <div class="figbox">
-        <svg class="diagram" viewBox="0 0 900 330" role="img" aria-label="A capture enters the TypeSafe loop. When it answers, the verdict stands, which happened 8 of 12 times. When it returns insufficient, 4 of 12, the same loop runs again with DeepSeek and that verdict is returned.">
-          <defs><marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 10,5 0,10" fill="currentColor"/></marker></defs>
-          <g fill="none" stroke="currentColor" stroke-width="1.6">
-            <rect x="30" y="60" width="130" height="56" rx="7"/><rect x="250" y="48" width="200" height="80" rx="7"/>
-            <rect x="250" y="222" width="200" height="80" rx="7"/><rect x="710" y="48" width="170" height="80" rx="7"/></g>
-          <g font-family="IBM Plex Mono, monospace" font-size="14" font-weight="500" fill="currentColor" text-anchor="middle">
-            <text x="95" y="93">capture</text><text x="350" y="82">TypeSafe</text><text x="350" y="256">DeepSeek</text></g>
-          <g font-family="Source Sans 3, sans-serif" font-size="12" fill="currentColor" opacity=".7" text-anchor="middle">
-            <text x="350" y="104">$0.00054 · 6 s</text><text x="350" y="278">$0.06 · 90 s</text></g>
-          <g fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#m3)">
-            <line x1="160" y1="88" x2="242" y2="88"/><line x1="450" y1="88" x2="702" y2="88"/>
-            <line x1="310" y1="128" x2="310" y2="214"/><polyline points="450,262 620,262 620,110 702,110"/></g>
-          <g font-family="Source Sans 3, sans-serif" font-size="12" fill="currentColor" opacity=".7" text-anchor="middle">
-            <text x="576" y="78">it answered</text><text x="535" y="252">recovered</text></g>
-          <text x="576" y="100" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" opacity=".55" text-anchor="middle">8 of 12</text>
-          <text x="298" y="166" font-family="Source Sans 3, sans-serif" font-size="12" fill="var(--warning)" text-anchor="end">insufficient</text>
-          <text x="298" y="184" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--warning)" opacity=".8" text-anchor="end">4 of 12</text>
-          <g font-family="IBM Plex Mono, monospace" font-size="13" text-anchor="middle">
-            <text x="795" y="74" fill="var(--error)">regression</text><text x="795" y="96" fill="var(--success)">clean</text>
-            <text x="795" y="118" fill="var(--warning)">insufficient</text></g>
+        <svg class="diagram" viewBox="0 0 980 470" role="img" aria-label="The investigation loop is drawn once: Scout to Critic, the Critic sending work down to Evidence and Investigator and back, and out to the Verifier, which returns regression, clean or insufficient. Below it two judges, TypeSafe and DeepSeek, each plug into the same loop. TypeSafe runs first. When its verdict is insufficient, which happened for 4 of 12 investigations, the same loop runs again with DeepSeek answering.">
+          <defs><marker id="mc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 10,5 0,10" fill="currentColor"/></marker></defs>
+
+          <rect x="30" y="30" width="680" height="272" rx="10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="6 5" opacity=".45"/>
+          <text x="48" y="54" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" opacity=".6" letter-spacing="1">ONE INVESTIGATION</text>
+
+          <g fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="70" y="92" width="110" height="50" rx="6"/>
+            <rect x="250" y="92" width="110" height="50" rx="6"/>
+            <rect x="540" y="92" width="110" height="50" rx="6"/>
+            <rect x="250" y="212" width="110" height="50" rx="6"/>
+            <rect x="395" y="212" width="110" height="50" rx="6"/>
+            <rect x="800" y="72" width="150" height="90" rx="6"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" fill="currentColor" text-anchor="middle">
+            <text x="125" y="122">Scout</text><text x="305" y="122">Critic</text><text x="595" y="122">Verifier</text>
+            <text x="305" y="242">Evidence</text><text x="450" y="242">Investigator</text>
+          </g>
+          <g fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#mc)">
+            <line x1="180" y1="117" x2="242" y2="117"/>
+            <line x1="360" y1="117" x2="532" y2="117"/>
+            <line x1="650" y1="117" x2="792" y2="117"/>
+            <line x1="272" y1="142" x2="272" y2="204"/>
+            <line x1="360" y1="237" x2="387" y2="237"/>
+            <polyline points="450,212 450,177 338,177 338,144"/>
+          </g>
+          <g font-family="Source Sans 3, sans-serif" font-size="11" fill="currentColor" opacity=".72" text-anchor="middle">
+            <text x="211" y="108">hypothesis</text>
+            <text x="446" y="106">gate opens</text>
+            <text x="721" y="104">verify</text>
+            <text x="394" y="170">revised</text>
+          </g>
+          <text x="264" y="178" font-family="Source Sans 3, sans-serif" font-size="11" fill="currentColor" opacity=".72" text-anchor="end">gate shut</text>
+          <text x="305" y="80" font-family="Source Sans 3, sans-serif" font-size="10.5" fill="var(--warning)" text-anchor="middle">at most four rounds</text>
+          <g font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="middle">
+            <text x="875" y="98" fill="var(--error)">regression</text>
+            <text x="875" y="119" fill="var(--success)">clean</text>
+            <text x="875" y="140" fill="var(--warning)">insufficient</text>
+          </g>
+
+          <g fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="170" y="352" width="185" height="64" rx="6"/>
+            <rect x="430" y="352" width="185" height="64" rx="6"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" fill="currentColor" text-anchor="middle">
+            <text x="262" y="378">TypeSafe jev-1.13.0</text><text x="522" y="378">DeepSeek-V4-Pro</text>
+          </g>
+          <g font-family="Source Sans 3, sans-serif" font-size="10.5" fill="currentColor" opacity=".68" text-anchor="middle">
+            <text x="262" y="398">$0.00054 · 6 s · runs first</text>
+            <text x="522" y="398">$0.06 · 90 s · on escalation only</text>
+          </g>
+          <g fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#mc)" opacity=".7">
+            <line x1="262" y1="348" x2="262" y2="308"/>
+            <line x1="522" y1="348" x2="522" y2="308"/>
+          </g>
+          <text x="640" y="330" font-family="Source Sans 3, sans-serif" font-size="11" fill="currentColor" opacity=".6">answers every typed question</text>
+
+          <polyline points="875,162 875,384 623,384" fill="none" stroke="var(--warning)" stroke-width="1.6" marker-end="url(#mc)"/>
+          <text x="750" y="374" font-family="Source Sans 3, sans-serif" font-size="11" fill="var(--warning)" text-anchor="middle">run it again, 4 of 12</text>
         </svg>
       </div>
+    </div>
+  </section>
+
+  <section class="slide claim">
+    <div class="inner">
+      <span class="tag">Claim 9</span>
+      <h2>It buys the expensive model's accuracy for a third.</h2>
+    </div>
+  </section>
+  <section class="slide">
+    <div class="inner">
       <div class="tablewrap">
         <table>
           <thead><tr><th>Policy</th><th>Correct</th><th>250 tests</th></tr></thead>
@@ -314,11 +364,14 @@ assertReloads(0)</b></pre>
         </table>
       </div>
     </div>
+        <p class="note">Escalating only the refusals. Two thirds of the work never pays the higher rate.</p>
+    </div>
   </section>
+
 
   <section class="slide claim">
     <div class="inner">
-      <span class="tag">Claim 9</span>
+      <span class="tag">Claim 10</span>
       <h2>We reproduced a real bug nobody designed for us.</h2>
     </div>
   </section>
@@ -340,7 +393,7 @@ assertReloads(0)</b></pre>
 
   <section class="slide claim">
     <div class="inner">
-      <span class="tag">Claim 10</span>
+      <span class="tag">Claim 11</span>
       <h2>And we still cannot detect it.</h2>
     </div>
   </section>
