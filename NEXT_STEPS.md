@@ -92,11 +92,19 @@ failing a test.
     Documenso #2485 leads: a user-reported bug that shipped, whose existing
     Playwright spec already reads the corrupted row and asserts the wrong two
     columns. Nothing has been executed, so every case is still a candidate.
-10. [ ] **Prove one held-out case end to end.** Check out the fix's parent
-    commit, run the pre-existing test unchanged, and confirm it passes on the
-    defective code. That premise is inferred from CI, never observed, and it is
-    the single most important unverified claim in all five reviews. Until it
-    holds, the Linkding suite is still the only demonstrated benchmark.
+10. [x] **One held-out case is proven.** Documenso #2485 reproduced end to end:
+    the unchanged upstream tests pass on both the defective and fixed builds,
+    and only the defective one leaves recipient rows claiming a signing request
+    was sent with no job and no mail behind them. See
+    [documenso-held-out.md](docs/experiments/documenso-held-out.md). The premise
+    that a pre-existing test passes on defective code is now observed, not
+    inferred.
+11. [ ] **Write the Documenso collector** so the investigator can actually read
+    that capture. It needs HTTP recording and a Postgres snapshot before
+    teardown, normalised into the shape
+    [evidence.ts](src/investigation/evidence.ts) expects, plus a contract for
+    "send a signing request to the dictated next signer". Until then the gap is
+    proven but undetected, which is the honest state to report.
 
 ## Human steps
 
