@@ -66,7 +66,9 @@ async function main() {
   if (escalateOn.some((v) => !["insufficient", "regression", "clean"].includes(v))) throw new Error("usage");
 
   const suite = await loadBenchmarkSuite(suitePath);
-  const judges = { typesafe: createTypeSafeJudge(), deepseek: createDeepSeekJudge() };
+  // Build only the judges this policy will actually use, so a TypeSafe-only run
+  // does not demand DeepSeek credentials it will never spend.
+  const makeJudge = { typesafe: createTypeSafeJudge, deepseek: createDeepSeekJudge };
   const project = process.env.WEAVE_PROJECT?.trim() || "beyond-green";
   if (!process.env.WANDB_API_KEY?.trim()) throw new Error("credentials");
   const client = await weave.init(project);
@@ -76,6 +78,9 @@ async function main() {
   await mkdir(directory, { recursive: true });
 
   const tierNames: ("typesafe" | "deepseek")[] = policy === "cascade" ? ["typesafe", "deepseek"] : [policy as "typesafe" | "deepseek"];
+  const judges: Partial<Record<"typesafe" | "deepseek", ReturnType<typeof createTypeSafeJudge>>> = {};
+  for (const tier of tierNames) judges[tier] = makeJudge[tier]();
+
   const dataset = new weave.Dataset({
     name: `${policy}-${suite.sha256.slice(0, 12)}`,
     rows: suite.cases.map((row, index) => ({ sampleId: String(index), caseId: row.id, expected: row.expected })),
@@ -99,7 +104,7 @@ async function main() {
       tier,
       run: async () => {
         const source = await loadLinkdingEvidence(sample.currentDir, sample.baselineDir);
-        const traced = createTracedInvestigation(source, judges[tier]);
+        const traced = createTracedInvestigation(source, judges[tier]!);
         const [result, call] = await traced.invoke(randomUUID());
         callIds.push({ tier, callId: call.id });
         return result;
@@ -183,8 +188,11 @@ async function main() {
 try {
   await main();
 } catch (error) {
-  console.error(error instanceof Error && error.message === "usage"
-    ? "Usage: npm run cascade -- --suite <suite.json> [--escalateOn insufficient,regression]"
-    : "Cascade stopped. Check suite integrity, credentials, and provider connectivity.");
+  const message = error instanceof Error ? error.message : "";
+  console.error(message === "usage"
+    ? "Usage: npm run cascade -- [--policy typesafe|deepseek|cascade] [--suite <suite.json>] [--escalateOn insufficient,regression]"
+    : message.includes("no complete suite")
+      ? "No captured suite found. Run `npm run benchmark:linkding:setup` then `npm run benchmark:linkding:suite` first, or pass --suite <suite.json>."
+      : "Run stopped. Check suite integrity, credentials, and provider connectivity.");
   process.exitCode = 1;
 }
