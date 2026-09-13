@@ -1,6 +1,13 @@
+<img src="site/assets/logo.png" alt="" width="96" align="left" hspace="16">
+
 # Beyond Green
 
 Your tests passed. We check what they missed.
+
+**[Open the presentation](https://sashaskind.github.io/safeci/)** ·
+[browse the recorded investigations](https://sashaskind.github.io/safeci/viewer/index.html)
+
+<br clear="left">
 
 After an end-to-end test passes, a loop of typed agents investigates the evidence
 that test left behind and decides whether the system actually behaved correctly.

@@ -6,7 +6,15 @@
 <title>Beyond Green</title>
 <meta name="description" content="A self-correcting loop that investigates the evidence a passing end-to-end test leaves behind.">
 <meta name="theme-color" content="#f5f7f6">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d5647'/%3E%3Cpath d='m7 16 6 6 12-13' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
+<meta property="og:title" content="Beyond Green">
+<meta property="og:description" content="Your tests passed. We check what they missed. A self-correcting loop that investigates the evidence a passing end-to-end test leaves behind.">
+<meta property="og:image" content="https://sashaskind.github.io/safeci/assets/og-card.png">
+<meta property="og:url" content="https://sashaskind.github.io/safeci/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sashaskind.github.io/safeci/assets/og-card.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   /* Palette and type from the project's own DESIGN.md. */
@@ -37,7 +45,8 @@
   strong{font-weight:650;color:var(--text)}
   a{color:inherit}
   .logo{display:flex;align-items:center;gap:.6rem;font-weight:650;font-size:1.05rem}
-  .logo svg{width:28px;height:28px}
+  .logo img{width:56px;height:56px;display:block}
+  .logo{font-size:1.2rem}
 
   .figures{display:flex;flex-wrap:wrap;gap:1.4rem 3rem;margin-top:.4rem}
   .fig{display:flex;flex-direction:column}
@@ -104,7 +113,7 @@
 <div class="deck" id="deck" tabindex="-1">
 
   <section class="slide">
-    <div class="logo"><svg viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="7" fill="var(--primary)"/><path d="m7 15 5 5 11-12" fill="none" stroke="var(--on-primary)" stroke-width="3"/></svg>Beyond Green</div>
+    <div class="logo"><img src="assets/logo.png" alt="" width="56" height="56">Beyond Green</div>
     <h1>Your tests passed.<br>We check what they missed.</h1>
     <p class="sub">A self-correcting loop that investigates the evidence a passing end-to-end test leaves behind, and decides whether the system actually behaved correctly.</p>
     <div class="figures">

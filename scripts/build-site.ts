@@ -15,7 +15,7 @@ const viewer = join(out, "viewer");
 await rm(out, { recursive: true, force: true });
 await mkdir(viewer, { recursive: true });
 
-await cp("site/index.html", join(out, "index.html"));
+await cp("site", out, { recursive: true });
 for (const file of ["app.js", "styles.css", "demo.json", "index.html"]) {
   await cp(join("ui", file), join(viewer, file));
 }
