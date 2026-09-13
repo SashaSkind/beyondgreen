@@ -106,12 +106,14 @@ failing a test.
     conservative on this suite. Provider disagreements collect into a review set
     with no labels, and all six found were one tier abstaining rather than two
     contradicting. See [loop-policy.md](docs/experiments/loop-policy.md).
-12. [ ] **Write the Documenso collector** so the investigator can actually read
-    that capture. It needs HTTP recording and a Postgres snapshot before
-    teardown, normalised into the shape
-    [evidence.ts](src/investigation/evidence.ts) expects, plus a contract for
-    "send a signing request to the dictated next signer". Until then the gap is
-    proven but undetected, which is the honest state to report.
+12. [ ] **Sharpen the Documenso contract.** The collector and adapter exist and
+    the loop reaches a verdict through them, but no provider separates the
+    defective build from the fixed one: TypeSafe abstains on both and DeepSeek
+    reports a regression on both. Neither build ever dispatches a signing
+    request in that scenario, so the contract has to rest on the false `sentAt`
+    claim alone. Write it from the operation's intent, then evaluate once.
+    Rewriting it while watching the verdicts manufactures the result the case
+    exists to test.
 
 ## Human steps
 
