@@ -17,7 +17,8 @@
     "benchmark:linkding:setup": "python3 benchmarks/linkding/run.py --setup",
     "benchmark:linkding": "python3 benchmarks/linkding/run.py",
     "benchmark:linkding:mutation": "python3 benchmarks/linkding/experiment.py",
-    "benchmark:linkding:show": "python3 benchmarks/linkding/show_capture.py"
+    "benchmark:linkding:show": "python3 benchmarks/linkding/show_capture.py",
+    "cost:project": "node scripts/project-cost.ts"
   },
   "dependencies": {
     "weave": "^0.16.8"

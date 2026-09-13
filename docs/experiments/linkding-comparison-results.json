@@ -1479,5 +1479,35 @@
         }
       ]
     }
-  ]
+  ],
+  "publishedRates": {
+    "measured": {
+      "typesafe": {
+        "inputUsdPerMillionTokens": 0.042,
+        "outputUsdPerMillionTokens": 0,
+        "source": "TypeSafe usage dashboard, read 2026-09-12."
+      },
+      "deepseek": {
+        "source": "No provider rate available. Cost comes from Weave default-rate estimates recorded per study."
+      }
+    },
+    "projectedOnly": {
+      "claude-fable-5-1": {
+        "inputUsdPerMillionTokens": 10,
+        "outputUsdPerMillionTokens": 50,
+        "source": "Anthropic published API rates, read 2026-09-13."
+      },
+      "gpt-6-astra": {
+        "inputUsdPerMillionTokens": 10,
+        "outputUsdPerMillionTokens": 50,
+        "source": "OpenAI published API rates, read 2026-09-13."
+      },
+      "gpt-6-astra-batch": {
+        "inputUsdPerMillionTokens": 5,
+        "outputUsdPerMillionTokens": 25,
+        "source": "OpenAI batch and flex tier, half the standard rate, read 2026-09-13."
+      }
+    },
+    "note": "Models under projectedOnly have never been run by this harness. Their figures are arithmetic on measured token profiles at published rates, not measurements."
+  }
 }

@@ -17,6 +17,26 @@ export const PUBLISHED_RATES: Record<string, ProviderRate> = {
   },
 };
 
+// Rates for models this harness has never run. They exist only to project what
+// the same loop would cost elsewhere, and a projection is not a measurement.
+export const REFERENCE_RATES: Record<string, ProviderRate> = {
+  "claude-fable-5-1": {
+    inputUsdPerMillionTokens: 10,
+    outputUsdPerMillionTokens: 50,
+    source: "Anthropic published API rates, read 2026-09-13.",
+  },
+  "gpt-6-astra": {
+    inputUsdPerMillionTokens: 10,
+    outputUsdPerMillionTokens: 50,
+    source: "OpenAI published API rates, read 2026-09-13.",
+  },
+  "gpt-6-astra-batch": {
+    inputUsdPerMillionTokens: 5,
+    outputUsdPerMillionTokens: 25,
+    source: "OpenAI batch and flex tier, half the standard rate, read 2026-09-13.",
+  },
+};
+
 // Estimated from recorded token counts, so it undercounts whenever a request
 // consumed tokens without producing a parsed judgment.
 export function estimateCostUsd(

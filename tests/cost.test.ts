@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { estimateCostUsd, PUBLISHED_RATES, type ProviderRate } from "../src/cost.ts";
+import { estimateCostUsd, PUBLISHED_RATES, REFERENCE_RATES, type ProviderRate } from "../src/cost.ts";
 
 const billed: ProviderRate = { inputUsdPerMillionTokens: 1, outputUsdPerMillionTokens: 4, source: "test" };
 
@@ -38,4 +38,18 @@ test("impossible usage or rates are rejected rather than silently priced", () =>
     { ...billed, inputUsdPerMillionTokens: Number.NaN }), /Invalid provider rate/);
   assert.throws(() => estimateCostUsd({ inputTokens: 0, outputTokens: 0 },
     { ...billed, outputUsdPerMillionTokens: -1 }), /Invalid provider rate/);
+});
+
+test("reference rates are kept apart from rates the harness has measured", () => {
+  // Mixing them would let a projection be read as a measurement.
+  for (const name of Object.keys(REFERENCE_RATES)) {
+    assert.equal(PUBLISHED_RATES[name], undefined, `${name} must not appear as a measured provider rate`);
+  }
+  for (const [name, rate] of Object.entries(REFERENCE_RATES)) {
+    assert.ok(rate.source.includes("2026"), `${name} must record when its rate was read`);
+    assert.ok(rate.inputUsdPerMillionTokens > 0 && rate.outputUsdPerMillionTokens > 0);
+  }
+  // One investigation at the measured verbose profile, at published frontier rates.
+  const projected = estimateCostUsd({ inputTokens: 15_889, outputTokens: 10_576 }, REFERENCE_RATES["claude-fable-5-1"]);
+  assert.ok(projected !== null && Math.abs(projected - 0.68769) < 1e-5);
 });

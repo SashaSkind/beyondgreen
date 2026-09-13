@@ -212,6 +212,41 @@ is the rate, amplified by DeepSeek's reasoning output being billed while
 TypeSafe's output is not. TypeSafe emits 382 output tokens to DeepSeek's ten
 thousand, and that advantage does not even reach the invoice.
 
+### What the same loop would cost elsewhere
+
+Two frontier models publish the same rate card, $10 per million input tokens and
+$50 per million output. Neither has been run through this loop, so the rows
+below are projections rather than measurements, and they are separated in
+[cost.ts](../../src/cost.ts) for that reason. Regenerate them with
+`npm run cost:project -- <evaluation.json...>`.
+
+Because output tokens carry most of a frontier bill, each unrun model is
+projected twice. The verbose column borrows DeepSeek's measured profile of
+15,889 input and 10,576 output tokens per investigation. The terse column
+borrows TypeSafe's 12,951 and 382. Those brackets are wide on purpose.
+
+| Model | Per investigation | 250 green tests | Basis |
+|---|---|---|---|
+| TypeSafe `jev-1.13.0` | $0.00054 | **$0.14** | measured |
+| DeepSeek-V4-Pro-0813 | $0.0605–0.0649 | **$15–16** | measured, Weave estimate |
+| Claude Fable 5.1 | $0.149–0.688 | **$37–172** | projected |
+| GPT-6 Astra | $0.149–0.688 | **$37–172** | projected |
+| GPT-6 Astra, batch tier | $0.074–0.344 | **$19–86** | projected |
+
+The spread from TypeSafe to a frontier model at the verbose profile is a factor
+of roughly 1,270. Even at the terse profile it is 273. Two levers close part of
+that gap for anyone who wants frontier reasoning on this workload. Investigating
+yesterday's green tests can wait, so batch pricing at half rate applies cleanly,
+and the loop resends a stable prefix seven times per investigation, so prompt
+caching recovers much of the input half.
+
+The assumption doing the work is that an unrun model reasons at a similar
+length. A loop whose answers are enumerated choices gives a model little reason
+to write at length, but thinking tokens are billed whether or not they are
+returned, so effort settings would decide where inside these brackets a real run
+lands. Replacing either projected row with a measured one needs an adapter and
+one run of this suite.
+
 This is the H3 question answered for one workflow: at these rates, investigating
 every green test in a suite is affordable with the cheaper model and a budget
 decision with the larger one. It says nothing about which is affordable for a
