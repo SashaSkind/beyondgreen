@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beyond Green</title>
+<meta name="description" content="A self-correcting loop that investigates the evidence a passing end-to-end test leaves behind.">
+<meta name="theme-color" content="#f5f7f6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d5647'/%3E%3Cpath d='m7 16 6 6 12-13' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Palette and type from the project's own DESIGN.md. */
+  :root{--bg:#f5f7f6;--surface:#fff;--sunk:#eef2f0;--text:#24372f;--muted:#66746d;--border:#dee5e0;
+    --primary:#1d5647;--on-primary:#fff;--error:#a83a34;--warning:#80590e;--success:#1d5647;
+    --success-surface:#e8f2ed;--mark:#17734a;--projected:#7b8a83;--grid:#dde5e1;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--sans:"Source Sans 3",system-ui,-apple-system,sans-serif}
+  @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1513;--surface:#151e1a;--sunk:#1b2622;
+    --text:#e2e9e5;--muted:#94a49c;--border:#27332e;--primary:#5fb397;--on-primary:#0e1513;--error:#e37a73;
+    --warning:#d3a63f;--success:#5fb397;--success-surface:#16241f;--mark:#3aa877;--projected:#7f918a;--grid:#223029}}
+  :root[data-theme=dark]{--bg:#0e1513;--surface:#151e1a;--sunk:#1b2622;--text:#e2e9e5;--muted:#94a49c;
+    --border:#27332e;--primary:#5fb397;--on-primary:#0e1513;--error:#e37a73;--warning:#d3a63f;--success:#5fb397;
+    --success-surface:#16241f;--mark:#3aa877;--projected:#7f918a;--grid:#223029}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.5}
+  .deck{scroll-snap-type:y mandatory;overflow-y:auto;height:100svh}
+  @media (prefers-reduced-motion:no-preference){.deck{scroll-behavior:smooth}}
+  .slide{scroll-snap-align:start;min-height:100svh;display:grid;align-content:center;gap:1.1rem;
+    max-width:64rem;margin:0 auto;padding-block:3.5rem 4.5rem;padding-left:24px;padding-right:24px}
+  h1,h2{margin:0;font-weight:650;letter-spacing:-.018em;line-height:1.1;text-wrap:balance}
+  h1{font-size:clamp(2.2rem,6.5vw,4rem)}
+  h2{font-size:clamp(1.5rem,4vw,2.4rem)}
+  h3{margin:0;font-size:1rem;font-weight:600}
+  p{margin:0}
+  .eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+  .sub{font-size:clamp(1rem,2.1vw,1.25rem);color:var(--muted);max-width:44rem}
+  strong{font-weight:650;color:var(--text)}
+  a{color:inherit}
+  .logo{display:flex;align-items:center;gap:.6rem;font-weight:650;font-size:1.05rem}
+  .logo svg{width:28px;height:28px}
+
+  .figures{display:flex;flex-wrap:wrap;gap:1.4rem 3rem;margin-top:.4rem}
+  .fig{display:flex;flex-direction:column}
+  .fig b{font-family:var(--mono);font-size:clamp(1.4rem,3.6vw,2rem);font-weight:500;font-variant-numeric:tabular-nums}
+  .fig span{font-size:.85rem;color:var(--muted)}
+
+  .evidence{font-family:var(--mono);font-size:clamp(.75rem,1.6vw,.88rem);background:var(--surface);
+    border:1px solid var(--border);border-radius:6px;display:grid;grid-template-columns:auto 1fr;
+    gap:.12rem 1.3rem;padding:1.1rem 1.3rem;overflow-x:auto}
+  .evidence dt{color:var(--muted);white-space:nowrap}
+  .evidence dd{margin:0;font-variant-numeric:tabular-nums}
+  .bad{color:var(--error);font-weight:500}.good{color:var(--success);font-weight:500}.warn{color:var(--warning);font-weight:500}
+
+  figure{margin:0;display:flex;flex-direction:column;gap:.6rem}
+  .figbox{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1.1rem .7rem;overflow-x:auto;position:relative}
+  svg.diagram{max-width:100%;height:auto;display:block;margin:0 auto}
+  figcaption{font-size:.85rem;color:var(--muted);max-width:46rem}
+
+  pre{margin:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.9rem 1.1rem;
+    overflow-x:auto;font-family:var(--mono);font-size:clamp(.72rem,1.5vw,.84rem);line-height:1.7}
+  code{font-family:var(--mono)}
+  .hi{color:var(--primary);font-weight:500}
+
+  ol.trace{list-style:none;margin:0;padding:0}
+  ol.trace li{display:grid;grid-template-columns:1.6rem 5.6rem 1fr;gap:.6rem;align-items:baseline;
+    font-family:var(--mono);font-size:clamp(.7rem,1.5vw,.8rem);padding:.35rem .6rem;border-bottom:1px solid var(--border)}
+  ol.trace li:first-child{border-top:1px solid var(--border)}
+  ol.trace .n{color:var(--muted);font-variant-numeric:tabular-nums}
+  ol.trace .said{color:var(--muted)}ol.trace .said b{color:var(--text);font-weight:500}
+  ol.trace li.pivot{background:var(--success-surface)}
+  .pivotnote{grid-column:2/-1;font-family:var(--sans);font-size:.84rem;color:var(--muted);margin-top:.2rem}
+
+  .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.7vw,.92rem)}
+  th,td{text-align:left;padding:.55rem 1rem;border-bottom:1px solid var(--border);white-space:nowrap}
+  thead th{font-family:var(--mono);font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+  tbody th{font-weight:400}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1.2rem 2rem}
+  .card{border-left:2px solid var(--border);padding-left:1rem}
+  .card p{margin-top:.2rem;font-size:.9rem;color:var(--muted)}
+  ul.limits{margin:0;padding-left:1.1rem;color:var(--muted);font-size:clamp(.9rem,1.9vw,1.02rem)}
+  ul.limits li{margin-top:.5rem}
+  .legend{display:flex;flex-wrap:wrap;gap:.3rem 1.5rem;font-size:.82rem;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:.5rem}
+  .cta{display:flex;flex-wrap:wrap;gap:.7rem}
+  .button{display:inline-flex;align-items:center;gap:.4rem;background:var(--primary);color:var(--on-primary);
+    text-decoration:none;font-weight:600;font-size:.92rem;padding:.6rem 1.05rem;border-radius:6px}
+  .button.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+
+  #tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .12s;background:var(--bg);
+    border:1px solid var(--border);border-radius:6px;padding:.45rem .65rem;font-size:.76rem;line-height:1.45;max-width:16rem}
+  #tip b{font-family:var(--mono);font-weight:500}#tip .basis{color:var(--muted)}
+
+  .pager{position:fixed;right:16px;bottom:12px;font-family:var(--mono);font-size:.7rem;color:var(--muted);
+    background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:.25rem .55rem}
+  .hint{position:fixed;left:16px;bottom:12px;font-size:.7rem;color:var(--muted)}
+  @media print{.pager,.hint{display:none}.deck{height:auto;overflow:visible}.slide{min-height:auto;page-break-after:always}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck" tabindex="-1">
+
+  <section class="slide">
+    <div class="logo"><svg viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="7" fill="var(--primary)"/><path d="m7 15 5 5 11-12" fill="none" stroke="var(--on-primary)" stroke-width="3"/></svg>Beyond Green</div>
+    <h1>Your tests passed.<br>We check what they missed.</h1>
+    <p class="sub">A self-correcting loop that investigates the evidence a passing end-to-end test leaves behind, and decides whether the system actually behaved correctly.</p>
+    <div class="figures">
+      <div class="fig"><b>6 s</b><span>per investigation</span></div>
+      <div class="fig"><b>$0.00054</b><span>per investigation</span></div>
+      <div class="fig"><b>0</b><span>false positives in 24 runs</span></div>
+      <div class="fig"><b>1</b><span>real shipped bug reproduced</span></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">The problem</div>
+    <h2>A green test hiding a destroyed row</h2>
+    <p class="sub">One line changes in Linkding: archiving a bookmark deletes it instead. The project's own browser test still passes, the request returns 200, and the final screenshots are identical down to the byte.</p>
+    <dl class="evidence">
+      <dt>test</dt><dd>test_active_bookmarks_partial_update_on_archive <span style="color:var(--muted)">(unmodified)</span></dd>
+      <dt>upstream test</dt><dd class="good">PASSED</dd>
+      <dt>archive request</dt><dd>POST /bookmarks/action &rarr; 200</dd>
+      <dt>screenshots</dt><dd>byte-identical, sha256 3ed76c3e…</dd>
+      <dt>clean bookmarks</dt><dd>9 &rarr; 9</dd>
+      <dt>defective bookmarks</dt><dd class="bad">9 &rarr; 8 &nbsp;&larr; one row destroyed</dd>
+      <dt>tag links removed</dt><dd class="bad">1</dd>
+    </dl>
+    <p class="sub">Nothing a person would look at has changed.</p>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">The loop</div>
+    <h2>Four roles, and a gate before any verdict</h2>
+    <figure>
+      <div class="figbox">
+        <svg class="diagram" viewBox="0 0 940 330" role="img" aria-label="The Scout sends a hypothesis to the Critic. When the gate does not open, the Critic names one missing evidence source, the Evidence step retrieves it, and the Investigator revises and returns to the Critic, at most four times. When all four gate clauses hold, a Verifier returns regression, clean, or insufficient. Three of the five steps can end a run without a verdict.">
+          <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 10,5 0,10" fill="currentColor"/></marker></defs>
+          <g fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="40" y="56" width="120" height="56" rx="6"/><rect x="260" y="56" width="120" height="56" rx="6"/>
+            <rect x="560" y="56" width="120" height="56" rx="6"/><rect x="260" y="222" width="120" height="56" rx="6"/>
+            <rect x="460" y="222" width="120" height="56" rx="6"/><rect x="780" y="40" width="150" height="88" rx="6"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" fill="currentColor" text-anchor="middle">
+            <text x="100" y="89">Scout</text><text x="320" y="89">Critic</text><text x="620" y="89">Verifier</text>
+            <text x="320" y="255">Evidence</text><text x="520" y="255">Investigator</text></g>
+          <g font-family="Source Sans 3, sans-serif" font-size="11" fill="var(--warning)" text-anchor="middle">
+            <text x="320" y="128">can refuse 3 ways</text><text x="620" y="128">can refuse 3 ways</text><text x="320" y="294">can refuse 1 way</text></g>
+          <g fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)">
+            <line x1="160" y1="84" x2="252" y2="84"/><line x1="380" y1="84" x2="552" y2="84"/><line x1="680" y1="84" x2="772" y2="84"/>
+            <line x1="292" y1="114" x2="292" y2="214"/><line x1="380" y1="250" x2="452" y2="250"/>
+            <polyline points="520,222 520,182 348,182 348,116"/></g>
+          <g font-family="Source Sans 3, sans-serif" font-size="11.5" fill="currentColor" opacity=".75" text-anchor="middle">
+            <text x="206" y="74">typed hypothesis</text><text x="466" y="62">all four gate clauses hold</text>
+            <text x="466" y="102">at most four rounds</text><text x="726" y="74">independent check</text>
+            <text x="416" y="240">retrieve one source</text><text x="434" y="174">revised hypothesis</text></g>
+          <text x="284" y="170" font-family="Source Sans 3, sans-serif" font-size="11.5" fill="currentColor" opacity=".75" text-anchor="end">gate shut</text>
+          <g font-family="IBM Plex Mono, monospace" font-size="12.5" text-anchor="middle">
+            <text x="855" y="68" fill="var(--error)">regression</text><text x="855" y="89" fill="var(--success)">clean</text>
+            <text x="855" y="110" fill="var(--warning)">insufficient</text></g>
+        </svg>
+      </div>
+      <figcaption>Nobody writes prose. Every answer is a choice from a list with a probability attached, so every branch is ordinary code reading an enumerated value.</figcaption>
+    </figure>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">The gate</div>
+    <h2>Watch the loop refuse itself</h2>
+    <pre>assessment.choice === <span class="hi">"supported"</span>
+  &amp;&amp; assessment.confidence &gt;= <span class="hi">minConfidence</span>
+  &amp;&amp; complete
+  &amp;&amp; hypothesis !== <span class="hi">"unknown"</span></pre>
+    <ol class="trace">
+      <li><span class="n">1</span><span>Scout</span><span class="said">hypothesis = <b>unknown</b> · 0.57</span></li>
+      <li><span class="n">2</span><span>Critic</span><span class="said">assessment = <b>insufficient</b> · 0.78, next = <b>database_state</b></span></li>
+      <li><span class="n">3</span><span>Evidence</span><span class="said">retrieved database_state</span></li>
+      <li><span class="n">4</span><span>Investigator</span><span class="said">hypothesis = <b>suspected_violation</b> · 0.62</span></li>
+      <li class="pivot"><span class="n">5</span><span>Critic</span><span class="said">assessment = <b>supported</b> · 0.31, next = <b>operation_contract</b></span>
+        <span class="pivotnote">The Critic agreed, and the loop kept going anyway, because 0.31 does not clear the gate. A loop that read the word and ignored the number would have stopped one source early and been right by luck.</span></li>
+      <li><span class="n">6</span><span>Evidence</span><span class="said">retrieved operation_contract</span></li>
+      <li><span class="n">7</span><span>Investigator</span><span class="said">hypothesis = <b>suspected_violation</b> · 0.98</span></li>
+      <li><span class="n">8</span><span>Critic</span><span class="said">assessment = <b>supported</b> · 0.89, next = <b>none</b></span></li>
+      <li><span class="n">9</span><span>Verifier</span><span class="said">verdict = <b class="bad">regression</b> · 0.98, grounding = <b>sufficient</b> · 0.99</span></li>
+    </ol>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Credibility</div>
+    <h2>What the model is never allowed to see</h2>
+    <figure>
+      <div class="figbox">
+        <svg class="diagram" viewBox="0 0 900 330" role="img" aria-label="A boundary diagram. The test outcome with the operation and row counts, plus three retrievable evidence sources, cross into model state. The case identifier and expected verdict, the mutation patch and local paths, and the harness validators are blocked and never reach the model.">
+          <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 10,5 0,10" fill="currentColor"/></marker></defs>
+          <line x1="470" y1="22" x2="470" y2="322" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" opacity=".55"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" opacity=".7" letter-spacing="1"><text x="40" y="30">HARNESS</text><text x="540" y="30">MODEL STATE</text></g>
+          <rect x="540" y="52" width="320" height="152" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor">
+            <text x="560" y="82">initial observation</text><text x="560" y="128">database_state</text>
+            <text x="560" y="152">operation_contract</text><text x="560" y="176">known_good_run</text></g>
+          <g font-family="Source Sans 3, sans-serif" font-size="11" fill="currentColor" opacity=".65">
+            <text x="560" y="102">test result, operation, row counts</text>
+            <text x="700" y="128">required</text><text x="700" y="152">required</text><text x="700" y="176">optional</text></g>
+          <g font-family="Source Sans 3, sans-serif" font-size="12.5" fill="currentColor" text-anchor="end">
+            <text x="400" y="80">test outcome, operation, counts</text><text x="400" y="132">before and after database rows</text>
+            <text x="400" y="156">pinned upstream implementation</text><text x="400" y="180">validated reference run</text></g>
+          <g fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#a2)" opacity=".85">
+            <line x1="412" y1="76" x2="532" y2="76"/><line x1="412" y1="128" x2="532" y2="128"/>
+            <line x1="412" y1="152" x2="532" y2="152"/><line x1="412" y1="176" x2="532" y2="176"/></g>
+          <g font-family="Source Sans 3, sans-serif" font-size="12.5" fill="var(--error)" text-anchor="end">
+            <text x="400" y="245">case id, expected verdict</text><text x="400" y="275">mutation patch, local paths</text>
+            <text x="400" y="305">harness state validators</text></g>
+          <g stroke="var(--error)" stroke-width="1.6" fill="none">
+            <line x1="412" y1="241" x2="452" y2="241"/><line x1="452" y1="231" x2="452" y2="251"/>
+            <line x1="412" y1="271" x2="452" y2="271"/><line x1="452" y1="261" x2="452" y2="281"/>
+            <line x1="412" y1="301" x2="452" y2="301"/><line x1="452" y1="291" x2="452" y2="311"/></g>
+          <text x="540" y="272" font-family="Source Sans 3, sans-serif" font-size="12" fill="var(--error)" opacity=".9">never crosses</text>
+        </svg>
+      </div>
+      <figcaption>Labels reach Weave only after an investigation returns, and only for scoring. Artifacts are hashed before and after every run, so both providers demonstrably read the same bytes.</figcaption>
+    </figure>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Measured</div>
+    <h2>Two models, one engine, identical evidence</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Two runs each</th><th>TypeSafe jev-1.13.0</th><th>DeepSeek-V4-Pro</th></tr></thead>
+        <tbody>
+          <tr><th>Correct verdicts</th><td class="num">4/6 · 4/6</td><td class="num">6/6 · 6/6</td></tr>
+          <tr><th>Abstentions</th><td class="num warn">2 · 2</td><td class="num">0 · 0</td></tr>
+          <tr><th>Wrong verdicts</th><td class="num good">0 · 0</td><td class="num good">0 · 0</td></tr>
+          <tr><th>False positives</th><td class="num good">0 · 0</td><td class="num good">0 · 0</td></tr>
+          <tr><th>Latency</th><td class="num">5.3 – 6.1 s</td><td class="num">78.8 – 92.5 s</td></tr>
+          <tr><th>Output tokens</th><td class="num">382</td><td class="num">9,900 – 11,200</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">No incorrect verdict in 24 investigations. Both runs abstained on exactly the same two defect shapes, for the same recorded reason, with every required source already in hand. That is a property of those defects, not noise.</p>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Policy</div>
+    <h2>The loop tunes itself from its own traces</h2>
+    <div class="cards">
+      <div class="card"><h3>A cascade recovers the gap</h3><p>Cheap provider first, escalating only what it refuses to answer. <strong>6 of 6</strong>, escalating 2, at a third of the larger model's cost.</p></div>
+      <div class="card"><h3>The threshold was conservative</h3><p>Re-running the suite at seven thresholds costs two cents. Dropping 0.80 to 0.50 recovers a case with no wrong verdict at any value.</p></div>
+      <div class="card"><h3>The traces label themselves</h3><p>Across four studies the providers never contradicted each other. All six disagreements were one giving up, spotted without any ground truth.</p></div>
+    </div>
+    <p class="sub">The obvious design escalates a confident finding for a second opinion. Our measurements say the opposite: every miss was an abstention, so escalate what the loop gives up on, not what it concludes.</p>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Economics</div>
+    <h2>Cheap enough to run on every green test</h2>
+    <figure>
+      <div class="figbox"><svg id="chart" class="diagram" role="img" aria-labelledby="chart-title"></svg><div id="tip" role="status"></div></div>
+      <div class="legend">
+        <span><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="var(--mark)"/></svg> measured end to end</span>
+        <span><svg width="30" height="16" aria-hidden="true"><line x1="3" y1="8" x2="27" y2="8" stroke="var(--projected)" stroke-width="2" stroke-dasharray="3 3"/><circle cx="3" cy="8" r="3.5" fill="none" stroke="var(--projected)" stroke-width="1.6"/><circle cx="27" cy="8" r="3.5" fill="none" stroke="var(--projected)" stroke-width="1.6"/></svg> projected range, never run</span>
+      </div>
+      <figcaption>Investigating 250 passing tests once each, logarithmic because the range spans four orders of magnitude. Both measured providers read a similar volume of input, so the gap is the rate, not efficiency.</figcaption>
+    </figure>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Held out</div>
+    <h2>A real bug nobody here designed</h2>
+    <p class="sub">Documenso #2485 shipped in 2.6.0. With next-signer dictation, a recipient was marked sent, with a timestamp, while no signing request was ever queued. Its own Playwright test loads that exact row and asserts <code>name</code> and <code>email</code>.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>Defective build</th><th>Fixed build</th></tr></thead>
+        <tbody>
+          <tr><th>Upstream tests</th><td class="num good">2 passed</td><td class="num good">2 passed</td></tr>
+          <tr><th>Rows claiming a dispatch</th><td class="num bad">2</td><td class="num">0</td></tr>
+          <tr><th>Signing-request jobs</th><td class="num">0</td><td class="num">0</td></tr>
+          <tr><th>Emails delivered</th><td class="num">0</td><td class="num">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub"><strong>And the investigator does not yet find it.</strong> TypeSafe abstains on both builds, DeepSeek reports a regression on both, which makes its finding a coincidence rather than a detection. Only the clean control caught that. We did not rewrite the contract while watching the verdicts, because that manufactures the result the case exists to test.</p>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Honest limits</div>
+    <h2>What this does not establish</h2>
+    <ul class="limits">
+      <li>Four mutations of one workflow are not four regression classes, and those cases were designed alongside the investigator. Two clean controls cannot characterise a false-positive rate.</li>
+      <li>Confidence measures how concentrated a distribution is, not how often the answer is right. Tuning the threshold on the same six cases we measure is overfitting.</li>
+      <li>The loop investigates one recorded operation per run, and it is not yet a CI gate.</li>
+      <li>Its quality rests on the contract it is given. A vague contract buys silence rather than a wrong answer, which is the safe failure but still a failure.</li>
+      <li>No invoice reaches this harness. Every dollar figure is an estimate carrying its source.</li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Try it</div>
+    <h2>Read the investigations yourself</h2>
+    <p class="sub">Twelve recorded investigations, both providers over all six captures, including the two abstentions. Inspect before and after state, the operation contract, and every recorded agent choice. No keys, no uploads, no model calls.</p>
+    <div class="cta">
+      <a class="button" href="viewer/index.html">Open the viewer <span aria-hidden="true">&rarr;</span></a>
+      <a class="button ghost" href="https://github.com/SashaSkind/safeci">Source on GitHub</a>
+    </div>
+    <p class="sub" style="margin-top:1.2rem">Linkding and Documenso are unmodified dependencies, pinned at eb98e67d and 3cef238f. The engine, capture harness, evidence layer, evaluation and viewer were built for the hackathon, and every role, retrieval and verdict is traced in W&amp;B Weave.</p>
+    <p class="sub"><strong>Your tests passed. We check what they missed.</strong></p>
+  </section>
+
+</div>
+<div class="pager" id="pager" aria-live="polite">1 / 11</div>
+<div class="hint">arrow keys to move</div>
+
+<script>
+  const DATA=[
+    {label:"TypeSafe alone",per:.000544,low:.136,high:.136,correct:"4 / 6",basis:"measured",note:"Cheapest, and it abstains on two defect shapes rather than guessing."},
+    {label:"Cascade",per:.021,low:5.36,high:5.36,correct:"6 / 6",basis:"measured",note:"TypeSafe first, escalating only abstentions. Escalated 2 of 6."},
+    {label:"DeepSeek-V4-Pro",per:.0627,low:15.67,high:15.67,correct:"6 / 6",basis:"measured",note:"Weave default-rate estimate across four studies."},
+    {label:"GPT-6 Astra, batch",per:null,low:18.58,high:85.96,correct:"—",basis:"projected",note:"Half-price tier. Investigating yesterday's tests can wait."},
+    {label:"Claude Fable 5.1",per:null,low:37.15,high:171.92,correct:"—",basis:"projected",note:"$10 per million input, $50 output. Range spans a terse and a verbose profile."},
+    {label:"GPT-6 Astra",per:null,low:37.15,high:171.92,correct:"—",basis:"projected",note:"Same published rate card as Fable 5.1."}];
+  const W=900,LEFT=205,RIGHT=868,MIN=.1,MAX=200,TOP=54,STEP=42,H=TOP+DATA.length*STEP+30;
+  const lx=v=>LEFT+(Math.log10(v)-Math.log10(MIN))/(Math.log10(MAX)-Math.log10(MIN))*(RIGHT-LEFT);
+  const money=v=>v>=1?"$"+v.toFixed(2):"$"+v.toFixed(3).replace(/0+$/,"");
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const svg=document.getElementById("chart");
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const p=[`<title id="chart-title">Cost of investigating 250 passing tests. TypeSafe alone 14 cents, the cascade $5.36, DeepSeek $15.67, frontier models projected between $19 and $172.</title>`];
+  for(const t of [.1,1,10,100]){const x=lx(t);
+    p.push(`<line x1="${x}" y1="${TOP-22}" x2="${x}" y2="${TOP+DATA.length*STEP-22}" stroke="var(--grid)" stroke-width="1"/>`);
+    p.push(`<text x="${x}" y="${TOP-30}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${t<1?"$0.10":"$"+t}</text>`);}
+  DATA.forEach((d,i)=>{const y=TOP+i*STEP,pr=d.basis==="projected",c=pr?"var(--projected)":"var(--mark)";
+    p.push(`<text x="${LEFT-14}" y="${y+4}" text-anchor="end" font-size="13" fill="currentColor">${esc(d.label)}</text>`);
+    if(pr){p.push(`<line x1="${lx(d.low)}" y1="${y}" x2="${lx(d.high)}" y2="${y}" stroke="${c}" stroke-width="2" stroke-dasharray="3 3"/>`);
+      p.push(`<circle cx="${lx(d.low)}" cy="${y}" r="4.5" fill="var(--surface)" stroke="${c}" stroke-width="1.8"/>`);
+      p.push(`<circle cx="${lx(d.high)}" cy="${y}" r="4.5" fill="var(--surface)" stroke="${c}" stroke-width="1.8"/>`);
+      p.push(`<text x="${lx(d.high)+12}" y="${y+4}" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${money(d.low)}–${money(d.high)}</text>`);}
+    else{p.push(`<circle cx="${lx(d.low)}" cy="${y}" r="6" fill="${c}" stroke="var(--surface)" stroke-width="2"/>`);
+      p.push(`<text x="${lx(d.low)+14}" y="${y+4}" font-size="12.5" fill="currentColor" font-family="IBM Plex Mono, monospace" font-weight="500">${money(d.low)}</text>`);
+      p.push(`<text x="${lx(d.low)+16+money(d.low).length*8.2}" y="${y+4}" font-size="11.5" fill="var(--muted)">${esc(d.correct)}</text>`);}
+    p.push(`<rect class="row-hit" x="0" y="${y-18}" width="${W}" height="${STEP-4}" fill="transparent" tabindex="0" data-i="${i}"><title>${esc(d.label)}: ${pr?money(d.low)+" to "+money(d.high):money(d.low)} per 250 tests</title></rect>`);});
+  p.push(`<text x="${LEFT}" y="${H-6}" font-size="11" fill="var(--muted)">cost of investigating 250 passing tests, logarithmic</text>`);
+  svg.innerHTML=p.join("");
+  const tip=document.getElementById("tip"),box=svg.parentElement;
+  function show(i,cx,cy){const d=DATA[i],cost=d.basis==="projected"?`${money(d.low)} – ${money(d.high)}`:money(d.low);
+    tip.innerHTML=`<b>${esc(d.label)}</b><br>${cost} per 250 tests`+(d.per!==null?`<br>$${d.per.toFixed(5)} each`:"")+
+      (d.correct!=="—"?`<br>${esc(d.correct)} correct`:"")+`<div class="basis">${esc(d.note)}</div>`;
+    const r=box.getBoundingClientRect();tip.style.opacity="1";
+    tip.style.left=Math.min(Math.max(8,cx-r.left+12),r.width-tip.offsetWidth-8)+"px";
+    tip.style.top=Math.max(8,cy-r.top-tip.offsetHeight-10)+"px";}
+  svg.addEventListener("pointermove",e=>{const h=e.target.closest(".row-hit");if(h)show(+h.dataset.i,e.clientX,e.clientY);else tip.style.opacity="0";});
+  svg.addEventListener("pointerleave",()=>{tip.style.opacity="0";});
+  svg.addEventListener("focusin",e=>{const h=e.target.closest(".row-hit");if(!h)return;const r=h.getBoundingClientRect();show(+h.dataset.i,r.left+200,r.top+10);});
+  svg.addEventListener("focusout",()=>{tip.style.opacity="0";});
+
+  const deck=document.getElementById("deck"),pager=document.getElementById("pager");
+  const slides=[...document.querySelectorAll(".slide")];
+  const current=()=>{let b=0,m=Infinity;slides.forEach((s,i)=>{const d=Math.abs(s.getBoundingClientRect().top);if(d<m){m=d;b=i;}});return b;};
+  const go=i=>slides[Math.max(0,Math.min(slides.length-1,i))].scrollIntoView({block:"start"});
+  deck.addEventListener("scroll",()=>{pager.textContent=`${current()+1} / ${slides.length}`;},{passive:true});
+  document.addEventListener("keydown",e=>{
+    if(["ArrowRight","PageDown"," "].includes(e.key)){e.preventDefault();go(current()+1);}
+    else if(["ArrowLeft","PageUp"].includes(e.key)){e.preventDefault();go(current()-1);}
+    else if(e.key==="Home"){e.preventDefault();go(0);}
+    else if(e.key==="End"){e.preventDefault();go(slides.length-1);}});
+</script>
+</body>
+</html>

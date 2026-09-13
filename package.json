@@ -26,7 +26,8 @@
     "bp:run": "node --env-file-if-exists=.env scripts/run-bp-cleanup.ts",
     "sweep": "node --env-file-if-exists=.env scripts/threshold-sweep.ts",
     "disagreements": "node --env-file-if-exists=.env scripts/disagreements.ts",
-    "cascade": "node --env-file-if-exists=.env scripts/cascade.ts"
+    "cascade": "node --env-file-if-exists=.env scripts/cascade.ts",
+    "site:build": "node scripts/build-site.ts"
   },
   "dependencies": {
     "weave": "^0.16.8"
