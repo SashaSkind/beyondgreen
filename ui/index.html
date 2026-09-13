@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f6">
+  <title>Beyond Green · Investigations</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d5647'/%3E%3Cpath d='m7 16 6 6 12-13' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="preload" href="/fonts/source-sans-3.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a href="#workspace" class="skip-link">Skip to investigation</a>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Beyond Green home"><svg viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="7"/><path d="m7 15 5 5 11-12"/></svg>Beyond Green<span class="wordmark-dot">.</span></a>
+    <span class="top-section">Investigations</span>
+    <div class="top-actions"><span class="local-label"><span></span>Local viewer</span><button class="button primary" id="import">Open receipt <span aria-hidden="true">↗</span></button></div>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+  </header>
+  <div id="notice" class="notice" role="alert" hidden></div>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Recorded investigations">
+      <div class="collection-heading"><h2>Recorded runs</h2><span id="run-count" class="count">0</span></div>
+      <div class="dataset"><span id="dataset-title">Loading recordings…</span><button id="load-demo" class="text-button">Load demo</button></div>
+      <label for="search" class="field-label">Find a run</label>
+      <div class="search-wrap"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="m12 12 5 5"/></svg><input id="search" type="search" placeholder="Search name or model"></div>
+      <div class="filters"><div><label for="provider">Model</label><select id="provider"><option value="all">All models</option></select></div><div><label for="verdict">Verdict</label><select id="verdict"><option value="all">All verdicts</option><option value="regression">Regression</option><option value="clean">Clean</option><option value="insufficient">Insufficient</option></select></div></div>
+      <nav id="run-list" aria-label="Choose a run" aria-live="polite"><p class="muted">Reading saved evidence…</p></nav>
+      <div class="sidebar-foot"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="8" width="12" height="9" rx="2"/><path d="M6 8V5a4 4 0 0 1 8 0v3"/></svg><p>Files stay in this browser.<br>No uploads or model calls.</p></div>
+    </aside>
+    <main id="workspace" tabindex="-1"><div class="loading"><div class="loading-line"></div><h1>Opening investigations…</h1><p>Loading the recorded Linkding study.</p></div></main>
+  </div>
+  <noscript>This viewer needs JavaScript to read and compare saved receipts.</noscript>
+</body>
+</html>

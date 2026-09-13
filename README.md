@@ -24,6 +24,30 @@ captured browser, HTTP, and database evidence. The
 [archive-to-delete experiment](benchmarks/linkding/README.md#archive-to-delete-experiment)
 also proves the same test stays green while the bookmark is deleted.
 
+## Local investigation viewer
+
+With Node.js 24+, run `npm ci` and `npm run ui`, then open
+[127.0.0.1:4310](http://127.0.0.1:4310). No API keys are needed. Use
+`npm run ui -- --port 4311` to choose another port.
+
+The viewer includes twelve recorded Linkding investigations from the second
+post-fix study: six captures viewed through both providers, including TypeSafe's
+two abstentions. Filter runs, inspect before/after state and operation contracts,
+expand recorded agent choices, and compare runs. **Open receipt** accepts an
+`investigation.json` or `evaluation.json` file (up to 12 MB / 200 investigations).
+Imports stay in browser memory; refresh clears imported data. **Export receipt**
+downloads the selected record. The local server serves only viewer assets.
+
+The bundled `ui/demo.json` is a display projection of the saved evaluation, with
+source hashes and trace links. It omits repeated prompt state, questions, and
+scoring labels; it preserves recorded verdicts, evidence, choices, and timings.
+The UI computes state differences for display and does not generate new findings
+or invoke models. Private BP/STT captures are not bundled. External source and
+Weave links open only when clicked.
+
+For browser checks, run `npx playwright install chromium` once, then
+`npm run test:ui`. See [DESIGN.md](DESIGN.md) for the design rules.
+
 ## W&B Weave connection
 
 Requires Node.js 24 or newer.

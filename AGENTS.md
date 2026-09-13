@@ -15,3 +15,4 @@ product definition and build order.
   sources, `writing-for-agents` for documents agents read.
 - Remaining work, and the invariants that protect the recorded results:
   [NEXT_STEPS.md](NEXT_STEPS.md).
+- UI changes: read [DESIGN.md](DESIGN.md) for the viewer's visual and evidence rules.
