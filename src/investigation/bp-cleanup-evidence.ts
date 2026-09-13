@@ -28,6 +28,34 @@ export function extractCleanupCapture(text: string, expectedPassed: number, base
   valid(summaries.length === 1 && Number(summaries[0].trim().split(" ")[0]) === expectedPassed);
   valid(!lines.some(line => /^\s*\d+ (failed|skipped|interrupted|did not run)\b/.test(line)));
   valid(lines.filter(line => /^\s*✓\s+\d+\s+/.test(line)).length === expectedPassed);
+  return extractObservations(lines, expectedPassed, baselineFingerprint);
+}
+
+// Fresh captures use Playwright's structured outcomes, never a printed "passed"
+// string that could have come from a test's own diagnostics.
+export function extractLiveCleanupCapture(value: unknown, expectedBaseline?: string) {
+  const report = object(value);
+  valid(report.schemaVersion === 1 && report.status === "passed" && report.errors === 0 && report.truncated === false);
+  valid(Array.isArray(report.tests) && report.tests.length > 0 && report.tests.length === report.plannedTests);
+  const ids = new Set<string>();
+  for (const value of report.tests) {
+    const t = object(value);
+    valid(typeof t.id === "string" && !ids.has(t.id) && t.status === "passed" && t.expectedStatus === "passed" && t.retry === 0);
+    ids.add(t.id);
+  }
+  valid(typeof report.stdout === "string" && report.stdout.length <= 1024 * 1024);
+  const lines = report.stdout.replace(/\u001b\[[0-9;]*m/g, "").split(/\r?\n/);
+  const declared = lines.filter(line => line.startsWith("[beforeAll] baseline fp="));
+  valid(declared.length <= 1);
+  const printed = declared[0]?.match(/^\[beforeAll\] baseline fp=(sha256:[a-f\d]{64})(?:\s|$)/)?.[1];
+  valid(!declared.length || !!printed);
+  const baseline = expectedBaseline ?? printed;
+  valid(typeof baseline === "string" && /^sha256:[a-f\d]{64}$/.test(baseline));
+  valid(!printed || printed === baseline);
+  return extractObservations(lines, report.tests.length, baseline);
+}
+
+function extractObservations(lines: string[], expectedPassed: number, baselineFingerprint: string) {
   const names = new Map<string, string>();
   const licenses = new Map<string, string>([[baselineFingerprint, "license-1"]]);
   const before: Worker[] = [], after: Worker[] = [];
@@ -37,6 +65,7 @@ export function extractCleanupCapture(text: string, expectedPassed: number, base
     if (!match) continue;
     const phase = match[1] === "beforeAll" ? "before" : "after";
     valid(phase === "before" ? !match[3] : !!match[3]);
+    valid(phase === "before" ? after.length === 0 : before.length === 2);
     const data = object(JSON.parse(match[4]));
     valid(typeof data.fingerprint === "string" && /^sha256:[a-f\d]{64}$/.test(data.fingerprint));
     valid(typeof data.state === "string" && states.includes(data.state));
@@ -79,9 +108,9 @@ function capture(value: unknown): CleanupCapture {
   return { schemaVersion: 1, test: { passed: true, passedCount: t.passedCount as number, skippedCount: 0 }, baselineLicenseId: c.baselineLicenseId, before, after };
 }
 
-export function createCleanupEvidence(currentValue: unknown, referenceValue: unknown): EvidenceSource {
-  const current = capture(currentValue), reference = capture(referenceValue);
-  valid(reference.after.workers.every(row => row.licenseId === reference.baselineLicenseId && row.slots.total > 0 && row.restoreReported));
+export function createCleanupEvidence(currentValue: unknown, referenceValue?: unknown): EvidenceSource {
+  const current = capture(currentValue), reference = referenceValue === undefined ? null : capture(referenceValue);
+  if (reference) valid(reference.after.workers.every(row => row.licenseId === reference.baselineLicenseId && row.slots.total > 0 && row.restoreReported));
   const contract = {
     operation: "Restore the baseline license on every worker after a test",
     requirements: [
@@ -90,7 +119,7 @@ export function createCleanupEvidence(currentValue: unknown, referenceValue: unk
       "A RESTORED message is the harness's claim; the recorded worker license identity and configured capacity are the observed result.",
       "Evaluate the post-cleanup state. A worker intentionally excluded during a test can correctly have zero slots before cleanup.",
     ],
-    source: { kind: "Documented test-header cleanup promise, reviewed locally; exact run-time test revision is not pinned." },
+    source: { kind: reference ? "Documented test-header cleanup promise, reviewed locally; exact run-time test revision is not pinned." : "Documented test-header cleanup promise checked against the local spec snapshot for this execution. Code provenance is recorded separately." },
     limits: "These endpoint values are printed in the test reporter. No independent product-log, proxy-file snapshot, metrics export, or mailbox capture is available for this run. Scope conclusions to observed worker cleanup, not the entire farm or transcription behavior.",
   };
   const database = (c: CleanupCapture) => ({ baselineLicenseId: c.baselineLicenseId, before: c.before, after: c.after, source: "Worker endpoint responses recorded by the test reporter; IDs are pseudonymized." });
@@ -103,13 +132,13 @@ export function createCleanupEvidence(currentValue: unknown, referenceValue: unk
     catalog: {
       database_state: "Current before/after worker license identities, reported states, capacity, and the harness's cleanup claims.",
       operation_contract: "The documented cleanup promise and the limits of the captured observations.",
-      known_good_run: "Supplied reference worker observations under the same cleanup promise. Contextual evidence, not proof about the current run.",
+      ...(reference ? { known_good_run: "Supplied reference worker observations under the same cleanup promise. Contextual evidence, not proof about the current run." } : {}),
     },
     required: ["database_state", "operation_contract"],
     async retrieve(key): Promise<Json> {
       if (key === "database_state") return structuredClone(database(current));
       if (key === "operation_contract") return structuredClone(contract);
-      if (key === "known_good_run") return { ...structuredClone(database(reference)), comparisonScope: "The reference is not an independent matched rerun of the current test. Build equivalence is not established by this packet. Worker and license IDs are local pseudonyms within each run." };
+      if (key === "known_good_run" && reference) return { ...structuredClone(database(reference)), comparisonScope: "The reference is not an independent matched rerun of the current test. Build equivalence is not established by this packet. Worker and license IDs are local pseudonyms within each run." };
       throw new Error("Unknown cleanup evidence source");
     },
   };
