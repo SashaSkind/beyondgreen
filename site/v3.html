@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beyond Green — v3</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{--bg:#0e1513;--surface:#151e1a;--text:#eef4f1;--muted:#93a69d;--border:#27332e;
+    --primary:#5fb397;--error:#e37a73;--warning:#d3a63f;--success:#5fb397;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--sans:"Source Sans 3",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.45;
+    -webkit-font-smoothing:antialiased}
+  #stage{position:fixed;inset:0;z-index:0;display:block}
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 45%,transparent 40%,rgba(6,10,9,.75) 100%)}
+  /* A claim slide is a statement, not a diagram. The mechanism stays visible
+     behind it as depth, but recedes far enough that the words never collide
+     with a node. The content slide that follows lifts the scrim again. */
+  .scrim{position:fixed;inset:0;z-index:1;pointer-events:none;background:var(--bg);
+    opacity:0;transition:opacity .45s ease}
+  body.claim .scrim{opacity:.74}
+  /* A content slide keeps its text on the left and the mechanism on the right.
+     The tile field is bright enough to swallow unbacked caption text, so the
+     left band is darkened to hold it and the right stays clear for the model. */
+  .scrim-l{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;
+    transition:opacity .45s ease;
+    background:linear-gradient(90deg,rgba(6,10,9,.94) 0%,rgba(6,10,9,.82) 30%,transparent 62%)}
+  body:not(.claim) .scrim-l{opacity:1}
+
+  .slide{position:fixed;inset:0;z-index:2;display:grid;align-content:center;
+    padding:6vh 7vw;pointer-events:none;opacity:0;transition:opacity .45s ease}
+  .slide.on{opacity:1}
+  .slide .inner{width:100%;max-width:62rem;margin:0 auto;display:grid;gap:1.3rem;justify-items:start}
+  .slide.mid .inner{justify-items:center;text-align:center}
+
+  h1{margin:0;font-size:clamp(2.6rem,7.5vw,5rem);font-weight:650;letter-spacing:-.03em;line-height:1}
+  h2{margin:0;font-size:clamp(1.9rem,5.4vw,3.8rem);font-weight:650;letter-spacing:-.025em;line-height:1.05;max-width:19ch}
+  .tag{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--primary);opacity:.9}
+  .sub{font-size:clamp(1rem,2vw,1.25rem);color:var(--muted);max-width:46ch;margin:0}
+
+  .panel{background:rgba(14,21,19,.78);border:1px solid var(--border);border-radius:10px;
+    padding:1.2rem 1.4rem;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+  dl.ev{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.3rem 2rem;
+    font-family:var(--mono);font-size:clamp(.8rem,1.6vw,1rem)}
+  dl.ev dt{color:var(--muted);white-space:nowrap}
+  dl.ev dd{margin:0;font-variant-numeric:tabular-nums}
+  .bad{color:var(--error)}.good{color:var(--success)}.warn{color:var(--warning)}
+
+  table{border-collapse:collapse;font-size:clamp(.82rem,1.7vw,1rem)}
+  th,td{text-align:left;padding:.5rem .9rem;border-bottom:1px solid var(--border);white-space:nowrap}
+  thead th{font-family:var(--mono);font-size:.64rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:400}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+  tbody th{font-weight:400;color:var(--muted)}
+
+  .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(17rem,1fr));gap:1rem}
+  pre{margin:0;font-family:var(--mono);font-size:clamp(.66rem,1.25vw,.82rem);line-height:1.6;color:var(--muted)}
+  pre b{color:var(--primary);font-weight:500}
+  .big{display:flex;flex-wrap:wrap;gap:1.4rem 3.4rem}
+  .big div{display:flex;flex-direction:column}
+  .big b{font-family:var(--mono);font-size:clamp(1.8rem,5vw,3.2rem);font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+  .big span{font-size:.88rem;color:var(--muted);margin-top:.25rem}
+  ol.tr{list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:clamp(.68rem,1.3vw,.85rem)}
+  ol.tr li{display:grid;grid-template-columns:1.4rem 5.4rem 1fr;gap:.6rem;padding:.28rem 0;color:var(--muted)}
+  ol.tr li b{color:var(--text);font-weight:500}
+  ol.tr li.pv{color:var(--text)}
+  ol.tr li.pv::before{content:"";position:absolute;margin-left:-.7rem;width:2px;height:1.1rem;background:var(--primary)}
+
+  .hud{position:fixed;z-index:3;font-family:var(--mono);font-size:.68rem;color:var(--muted);pointer-events:none}
+  .hud.r{right:18px;bottom:14px}.hud.l{left:18px;bottom:14px}
+  .bar{position:fixed;left:0;top:0;height:2px;background:var(--primary);z-index:4;transition:width .45s ease}
+  .fallback{position:fixed;inset:0;z-index:5;display:none;place-content:center;text-align:center;padding:2rem;background:var(--bg)}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div class="scrim"></div>
+<div class="scrim-l"></div>
+<div class="vignette"></div>
+<div class="bar" id="bar"></div>
+
+<!-- Slides are 2D overlays. The scene behind them never unmounts. -->
+<section class="slide mid" data-shot="wide">
+  <div class="inner">
+    <img src="assets/logo.png" alt="" width="84" height="84" style="border-radius:16px">
+    <h1>Beyond Green</h1>
+    <p class="sub" style="font-size:clamp(1.05rem,2.3vw,1.5rem);color:var(--text);opacity:.85">Your tests passed.<br>We check what they missed.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="wide">
+  <div class="inner"><span class="tag">Claim 1</span><h2>A green test can hide a destroyed row.</h2></div>
+</section>
+<section class="slide" data-shot="under">
+  <div class="inner">
+    <div class="panel"><dl class="ev">
+      <dt>upstream test</dt><dd class="good">PASSED</dd>
+      <dt>archive request</dt><dd>POST /bookmarks/action &rarr; 200</dd>
+      <dt>screenshots</dt><dd>byte-identical</dd>
+      <dt>bookmarks, healthy</dt><dd>9 &rarr; 9</dd>
+      <dt>bookmarks, defective</dt><dd class="bad">9 &rarr; 8</dd>
+    </dl></div>
+    <p class="sub">One line changes: archiving deletes instead of hiding. The tile stays green.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="pair">
+  <div class="inner"><span class="tag">Claim 2</span><h2>Their own test looks straight past it.</h2></div>
+</section>
+<section class="slide" data-shot="pair">
+  <div class="inner">
+    <div class="panel split">
+      <pre>get_by_text("<b>Archive</b>").click()
+
+assertVisibleBookmarks(["1","3"])
+assertVisibleTags([...])
+assertReloads(0)</pre>
+      <pre>get_by_text("<b>Remove</b>").click()
+
+assertVisibleBookmarks(["1","3"])
+assertVisibleTags([...])
+assertReloads(0)</pre>
+    </div>
+    <p class="sub">Two operations whose whole difference is whether the data survives. Identical assertions.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="loop">
+  <div class="inner"><span class="tag">Claim 3</span><h2>So we investigate after the test passes.</h2></div>
+</section>
+<section class="slide" data-shot="loop">
+  <div class="inner">
+    <p class="sub" style="max-width:32ch">A Scout proposes. A Critic attacks it and picks what to read. An Investigator revises. A Verifier rules, and can veto.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="gate">
+  <div class="inner"><span class="tag">Claim 4</span><h2>It has to earn the right to answer.</h2></div>
+</section>
+<section class="slide" data-shot="gate">
+  <div class="inner">
+    <div class="panel"><ol class="tr">
+      <li><span>1</span><span>Scout</span><span>unknown · <b>0.57</b></span></li>
+      <li><span>2</span><span>Critic</span><span>insufficient → <b>database_state</b></span></li>
+      <li><span>4</span><span>Investigator</span><span>suspected · <b>0.62</b></span></li>
+      <li class="pv"><span>5</span><span>Critic</span><span>supported · <b>0.31</b> → keeps going</span></li>
+      <li><span>7</span><span>Investigator</span><span>suspected · <b>0.98</b></span></li>
+      <li><span>9</span><span>Verifier</span><span><b class="bad">regression</b> · 0.98</span></li>
+    </ol></div>
+    <p class="sub">Step 5: it agreed, at 0.31. Below the bar, so it fetched the contract instead of concluding.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="verdict">
+  <div class="inner"><span class="tag">Claim 5</span><h2>Zero wrong verdicts in 24 investigations.</h2></div>
+</section>
+<section class="slide" data-shot="verdict">
+  <div class="inner">
+    <div class="panel"><table>
+      <thead><tr><th>Two runs each</th><th>TypeSafe</th><th>DeepSeek</th></tr></thead>
+      <tbody>
+        <tr><th>Correct</th><td class="num">4/6 · 4/6</td><td class="num">6/6 · 6/6</td></tr>
+        <tr><th>Wrong</th><td class="num good">0 · 0</td><td class="num good">0 · 0</td></tr>
+        <tr><th>False positives</th><td class="num good">0 · 0</td><td class="num good">0 · 0</td></tr>
+        <tr><th>Latency</th><td class="num">5.3–6.1 s</td><td class="num">78.8–92.5 s</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">Every failure is a refusal, never a wrong answer.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="field">
+  <div class="inner">
+    <span class="tag">Claim 6</span><h2>Cheap enough to run on every green test.</h2>
+    <div class="big">
+      <div><b>$0.14</b><span>250 tests investigated</span></div>
+      <div><b>$0.07</b><span>our entire two-day build</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="cascade">
+  <div class="inner"><span class="tag">Claim 7</span><h2>The cheap model gives up. It never guesses.</h2></div>
+</section>
+<section class="slide" data-shot="cascade">
+  <div class="inner">
+    <div class="panel"><table>
+      <thead><tr><th>Policy</th><th>Correct</th><th>250 tests</th></tr></thead>
+      <tbody>
+        <tr><th>TypeSafe alone</th><td class="num">8 / 12</td><td class="num">$0.14</td></tr>
+        <tr><th>Cascade</th><td class="num good">12 / 12</td><td class="num good">$5.36</td></tr>
+        <tr><th>DeepSeek alone</th><td class="num">12 / 12</td><td class="num">$15.67</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">Escalate only the refusals. Two thirds of the work never pays the higher rate.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="held">
+  <div class="inner"><span class="tag">Claim 8</span><h2>We reproduced a real bug nobody designed for us.</h2></div>
+</section>
+<section class="slide" data-shot="held">
+  <div class="inner">
+    <div class="panel"><table>
+      <thead><tr><th>Documenso #2485</th><th>Defective</th><th>Fixed</th></tr></thead>
+      <tbody>
+        <tr><th>Upstream tests</th><td class="num good">2 passed</td><td class="num good">2 passed</td></tr>
+        <tr><th>Rows claiming a send</th><td class="num bad">2</td><td class="num">0</td></tr>
+        <tr><th>Emails actually sent</th><td class="num">0</td><td class="num">0</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">A user-reported bug that shipped. Its own test loads the corrupted row and asserts the wrong two columns.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="held">
+  <div class="inner"><span class="tag">Claim 9</span><h2>The contract is the ceiling, not the loop.</h2></div>
+</section>
+<section class="slide" data-shot="held">
+  <div class="inner">
+    <div class="panel"><table>
+      <thead><tr><th>Capture</th><th>TypeSafe</th><th>DeepSeek</th></tr></thead>
+      <tbody>
+        <tr><th>Defective</th><td class="num warn">abstains</td><td class="num">regression</td></tr>
+        <tr><th>Fixed control</th><td class="num warn">abstains</td><td class="num bad">regression</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">Neither separates the builds. DeepSeek flagged the fixed one too, so its finding is not a detection. Only the control caught that.</p>
+  </div>
+</section>
+
+<section class="slide mid" data-shot="wide">
+  <div class="inner">
+    <img src="assets/logo.png" alt="" width="70" height="70" style="border-radius:14px">
+    <h2>Your tests passed.<br>We check what they missed.</h2>
+    <p class="sub" style="font-family:var(--mono);font-size:.8rem">github.com/SashaSkind/safeci</p>
+  </div>
+</section>
+
+<div class="hud l" id="hint">← → to move</div>
+<div class="hud r" id="pager"></div>
+<div class="fallback" id="fallback"><div>
+  <h2 style="max-width:30ch">This deck needs WebGL.</h2>
+  <p class="sub">Open the flat version at <b>index.html</b> instead.</p>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var slides = [].slice.call(document.querySelectorAll(".slide"));
+  var pager = document.getElementById("pager"), bar = document.getElementById("bar");
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (!window.THREE) { document.getElementById("fallback").style.display = "grid"; return; }
+
+  // ---- levels: 0..1 dials the scene reads, damped toward each shot's target ----
+  var LEVELS = ["field", "focus", "rows", "gap", "loop", "pulse", "verdict", "judges", "second"];
+  function lv(o) { var out = {}; LEVELS.forEach(function (k) { out[k] = o[k] || 0; }); return out; }
+
+  var SHOTS = {
+    wide:    { pos: [0, 15, 30],   tgt: [0, 0, 0],     turn: 1,   levels: lv({ field: 1 }) },
+    field:   { pos: [0, 26, 40],   tgt: [0, 0, 0],     turn: .6,  levels: lv({ field: 1 }) },
+    under:   { pos: [3.5, -4.6, 9], tgt: [0, -2.2, 0], turn: .05, levels: lv({ field: 1, focus: 1, rows: 1, gap: 1 }) },
+    pair:    { pos: [0, 3.4, 11],  tgt: [0, .3, 0],    turn: .08, levels: lv({ field: 1, focus: 1, rows: .55 }) },
+    loop:    { pos: [-0.4, 4.6, 19], tgt: [-0.4, 4.1, 0], turn: .18, levels: lv({ field: .35, loop: 1, pulse: 1 }) },
+    gate:    { pos: [-2.4, 5.4, 9.5], tgt: [-2.4, 4.6, 0], turn: .06, levels: lv({ field: .2, loop: 1, pulse: 1 }) },
+    verdict: { pos: [0, 7.5, 21],  tgt: [0, 3.2, 0],   turn: .3,  levels: lv({ field: .75, loop: .55, verdict: 1 }) },
+    cascade: { pos: [-0.4, 3.8, 22], tgt: [-0.4, 3.4, 0], turn: .12, levels: lv({ field: .3, loop: .85, judges: 1, pulse: 1 }) },
+    held:    { pos: [0, 13, 30],   tgt: [0, 1, 0],     turn: .5,  levels: lv({ field: 1, second: 1 }) }
+  };
+
+  var C = {
+    bg: 0x0e1513, tile: 0x2f6f5c, tileDim: 0x1d3f36, hot: 0xe37a73,
+    node: 0x7fd8b8, line: 0x39705f, amber: 0xd3a63f, second: 0x4a7fb5
+  };
+
+  var canvas = document.getElementById("stage");
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+  } catch (e) { document.getElementById("fallback").style.display = "grid"; return; }
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(C.bg, 1);
+
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(C.bg, 28, 78);
+  var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 260);
+  var camTarget = new THREE.Vector3();
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+  var key = new THREE.DirectionalLight(0xdff3ea, 0.85);
+  key.position.set(6, 14, 9); scene.add(key);
+  var rim = new THREE.DirectionalLight(0x5fb397, 0.4);
+  rim.position.set(-9, 3, -7); scene.add(rim);
+
+  var world = new THREE.Group(); scene.add(world);   // turntable: the ambient field
+  var rig = new THREE.Group(); scene.add(rig);       // fixed: the diagram
+
+  // ---- the field: one tile per test in a CI run ----
+  var COLS = 25, ROWS = 10, N = COLS * ROWS, SP = 1.35, FOCUS = Math.floor(N / 2) + 2;
+  var tileGeo = new THREE.BoxGeometry(1, 0.16, 1);
+  var tileMat = new THREE.MeshStandardMaterial({ roughness: .72, metalness: .05, transparent: true });
+  var field = new THREE.InstancedMesh(tileGeo, tileMat, N);
+  field.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  var colorAttr = new Float32Array(N * 3);
+  field.instanceColor = new THREE.InstancedBufferAttribute(colorAttr, 3);
+  var base = [], m4 = new THREE.Matrix4(), q = new THREE.Quaternion(),
+      pos = new THREE.Vector3(), scl = new THREE.Vector3(1, 1, 1), col = new THREE.Color();
+  for (var i = 0; i < N; i++) {
+    var cx = (i % COLS) - (COLS - 1) / 2, cz = Math.floor(i / COLS) - (ROWS - 1) / 2;
+    base.push(new THREE.Vector3(cx * SP, 0, cz * SP));
+  }
+  world.add(field);
+
+  // ---- the rows beneath one tile: what the test never looks at ----
+  var rowGroup = new THREE.Group(); rowGroup.position.set(0, -2.4, 0); world.add(rowGroup);
+  var rowMats = [], ROWN = 9;
+  for (var r = 0; r < ROWN; r++) {
+    var mat = new THREE.MeshStandardMaterial({ color: C.tile, roughness: .6, transparent: true, opacity: 0 });
+    var rowBar = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.62), mat);
+    rowBar.position.set((r - (ROWN - 1) / 2) * 0.9, 0, 0);
+    rowMats.push(mat); rowGroup.add(rowBar);
+  }
+
+  // ---- the loop: five roles, the path between them, and a pulse ----
+  var loopGroup = new THREE.Group(); loopGroup.position.set(0, 5.4, 0); rig.add(loopGroup);
+  var NODES = [
+    { n: "Scout", p: [-7.4, 0, 0] }, { n: "Critic", p: [-2.4, 0, 0] },
+    { n: "Verifier", p: [6.6, 0, 0] }, { n: "Evidence", p: [-2.4, -2.6, 0] },
+    { n: "Investigator", p: [2.2, -2.6, 0] }
+  ];
+  var PATH = [0, 1, 3, 4, 1, 2];
+  var nodeMats = [], nodeMeshes = [];
+  NODES.forEach(function (d) {
+    var mat = new THREE.MeshStandardMaterial({ color: C.node, roughness: .35, transparent: true, opacity: 0, emissive: C.node, emissiveIntensity: .18 });
+    var mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), mat);
+    mesh.position.set(d.p[0], d.p[1], d.p[2]);
+    nodeMats.push(mat); nodeMeshes.push(mesh); loopGroup.add(mesh);
+  });
+  var lineMat = new THREE.LineBasicMaterial({ color: C.line, transparent: true, opacity: 0 });
+  var lineGeo = new THREE.BufferGeometry().setFromPoints(PATH.map(function (idx) {
+    return new THREE.Vector3(NODES[idx].p[0], NODES[idx].p[1], NODES[idx].p[2]);
+  }));
+  loopGroup.add(new THREE.Line(lineGeo, lineMat));
+  var pulseMat = new THREE.MeshBasicMaterial({ color: 0xbff3de, transparent: true, opacity: 0 });
+  var pulse = new THREE.Mesh(new THREE.SphereGeometry(0.19, 14, 14), pulseMat);
+  loopGroup.add(pulse);
+
+  // ---- the two judges that plug into the same loop ----
+  var judgeGroup = new THREE.Group(); judgeGroup.position.set(0, 1.3, 0); rig.add(judgeGroup);
+  var judgeMats = [];
+  [[-3.4, C.node], [3.4, C.amber]].forEach(function (d) {
+    var mat = new THREE.MeshStandardMaterial({ color: d[1], roughness: .4, transparent: true, opacity: 0, emissive: d[1], emissiveIntensity: .12 });
+    var mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.3, 6), mat);
+    mesh.position.set(d[0], 0, 0);
+    judgeMats.push(mat); judgeGroup.add(mesh);
+  });
+
+  // ---- a second application, arriving alongside the first ----
+  var secondMat = new THREE.MeshStandardMaterial({ color: C.second, roughness: .7, transparent: true, opacity: 0 });
+  var second = new THREE.InstancedMesh(tileGeo, secondMat, 60);
+  for (var s = 0; s < 60; s++) {
+    m4.compose(new THREE.Vector3(((s % 12) - 5.5) * SP + 24, 0, (Math.floor(s / 12) - 2) * SP), q, scl);
+    second.setMatrixAt(s, m4);
+  }
+  second.instanceMatrix.needsUpdate = true; world.add(second);
+
+  // ---- state ----
+  var cur = {}, want = {};
+  LEVELS.forEach(function (k) { cur[k] = 0; want[k] = 0; });
+  var shot = SHOTS.wide, index = 0, turn = 0, turnRate = 1;
+  camera.position.set(shot.pos[0], shot.pos[1], shot.pos[2]);
+  camTarget.set(shot.tgt[0], shot.tgt[1], shot.tgt[2]);
+
+  function applyShot(name) {
+    shot = SHOTS[name] || SHOTS.wide;
+    LEVELS.forEach(function (k) { want[k] = shot.levels[k]; });
+  }
+  function show(next) {
+    index = Math.max(0, Math.min(slides.length - 1, next));
+    slides.forEach(function (el, i) { el.classList.toggle("on", i === index); });
+    document.body.classList.toggle("claim", slides[index].classList.contains("mid"));
+    applyShot(slides[index].dataset.shot);
+    pager.textContent = (index + 1) + " / " + slides.length;
+    bar.style.width = ((index + 1) / slides.length * 100) + "%";
+  }
+
+  function damp(a, b, lambda, dt) { return b + (a - b) * Math.exp(-lambda * dt); }
+
+  var clock = new THREE.Clock(), tmp = new THREE.Vector3();
+  function frame() {
+    var dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+    var L = reduced ? 40 : 2.6;
+
+    LEVELS.forEach(function (k) { cur[k] = damp(cur[k], want[k], 3.2, dt); });
+    camera.position.x = damp(camera.position.x, shot.pos[0], L, dt);
+    camera.position.y = damp(camera.position.y, shot.pos[1], L, dt);
+    camera.position.z = damp(camera.position.z, shot.pos[2], L, dt);
+    camTarget.x = damp(camTarget.x, shot.tgt[0], L, dt);
+    camTarget.y = damp(camTarget.y, shot.tgt[1], L, dt);
+    camTarget.z = damp(camTarget.z, shot.tgt[2], L, dt);
+    camera.lookAt(camTarget);
+
+    turnRate = damp(turnRate, shot.turn, 2, dt);
+    if (!reduced) turn += dt * 0.06 * turnRate;
+    // Close shots settle back to square, so nothing swings out of frame.
+    var TAU = Math.PI * 2, rest = Math.round(turn / TAU) * TAU;
+    turn = damp(turn, rest, 1.6 * (1 - Math.min(turnRate, 1)), dt);
+    world.rotation.y = turn;
+
+    // Tiles: the focused one lifts and grows; its neighbour pairs with it.
+    tileMat.opacity = 0.1 + 0.9 * cur.field;
+    for (var i = 0; i < N; i++) {
+      var b = base[i], isFocus = i === FOCUS, isTwin = i === FOCUS + 2;
+      var lift = 0, size = 1;
+      if (isFocus) { lift = 1.5 * cur.focus; size = 1 + 1.3 * cur.focus; }
+      else if (isTwin) { lift = 1.5 * cur.focus; size = 1 + 1.3 * cur.focus; }
+      else {
+        var d = Math.hypot(b.x - base[FOCUS].x, b.z - base[FOCUS].z);
+        lift = Math.sin(t * 0.5 + d * 0.35) * 0.07 * (1 - cur.focus * 0.7);
+      }
+      pos.set(b.x, b.y + lift, b.z);
+      scl.set(size, 1, size);
+      m4.compose(pos, q, scl);
+      field.setMatrixAt(i, m4);
+      var c = (isFocus && cur.verdict > 0.5) ? C.hot : C.tile;
+      col.setHex(c);
+      if (!isFocus && !isTwin) col.lerp(new THREE.Color(C.tileDim), 0.45 - 0.35 * cur.field);
+      colorAttr[i * 3] = col.r; colorAttr[i * 3 + 1] = col.g; colorAttr[i * 3 + 2] = col.b;
+    }
+    field.instanceMatrix.needsUpdate = true;
+    field.instanceColor.needsUpdate = true;
+
+    // Rows beneath: one is gone on the defective build.
+    rowGroup.position.x = base[FOCUS].x; rowGroup.position.z = base[FOCUS].z;
+    rowGroup.visible = cur.rows > 0.02;
+    for (var r2 = 0; r2 < ROWN; r2++) {
+      var missing = r2 === 4;
+      rowMats[r2].opacity = cur.rows * (missing ? (1 - cur.gap) : 1) * 0.96;
+      rowMats[r2].color.setHex(missing && cur.gap > 0.3 ? C.hot : C.tile);
+    }
+
+    // Loop: nodes fade in, the pulse walks the path.
+    for (var n = 0; n < nodeMats.length; n++) {
+      nodeMats[n].opacity = cur.loop;
+      var s2 = 1 + Math.sin(t * 1.6 + n) * 0.05 * cur.loop;
+      nodeMeshes[n].scale.setScalar(s2);
+    }
+    loopGroup.visible = cur.loop > 0.02;
+    lineMat.opacity = cur.loop * 0.85;
+    pulseMat.opacity = cur.pulse * cur.loop;
+    var travel = (t * 0.42) % PATH.length, seg = Math.floor(travel), f = travel - seg;
+    var a = NODES[PATH[seg]].p, bb = NODES[PATH[(seg + 1) % PATH.length]].p;
+    pulse.position.set(a[0] + (bb[0] - a[0]) * f, a[1] + (bb[1] - a[1]) * f, a[2] + (bb[2] - a[2]) * f);
+
+    judgeGroup.visible = cur.judges > 0.02;
+    judgeMats[0].opacity = cur.judges;
+    judgeMats[1].opacity = cur.judges * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 1.2)));
+    judgeGroup.position.y = 1.3 - 0.4 * (1 - cur.judges);
+    second.visible = cur.second > 0.02;
+    secondMat.opacity = cur.second * 0.9;
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  function resize() {
+    var w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    // Keep the field in frame on narrow screens by widening the lens.
+    camera.fov = w / h < 1 ? 58 : 42;
+    camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize);
+  resize(); show(0); frame();
+
+  addEventListener("keydown", function (e) {
+    if (["ArrowRight", "PageDown", " ", "ArrowDown"].indexOf(e.key) >= 0) { e.preventDefault(); show(index + 1); }
+    else if (["ArrowLeft", "PageUp", "ArrowUp"].indexOf(e.key) >= 0) { e.preventDefault(); show(index - 1); }
+    else if (e.key === "Home") { e.preventDefault(); show(0); }
+    else if (e.key === "End") { e.preventDefault(); show(slides.length - 1); }
+  });
+  addEventListener("pointerdown", function (e) { show(index + (e.clientX < innerWidth * 0.28 ? -1 : 1)); });
+})();
+</script>
+</body>
+</html>
