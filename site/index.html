@@ -243,14 +243,31 @@
   </section>
 
   <section class="slide">
+    <div class="eyebrow">The cascade</div>
+    <h2>The expensive model's accuracy, at a third of the price</h2>
+    <p class="sub">Run the cheap provider first and escalate only what it refuses to answer. Replayed across two recorded studies, twelve investigations per provider.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Policy</th><th>Correct</th><th>Cost per 250 tests</th></tr></thead>
+        <tbody>
+          <tr><th>TypeSafe alone</th><td class="num">8 / 12</td><td class="num">$0.14</td></tr>
+          <tr><th>Cascade</th><td class="num good">12 / 12</td><td class="num good">$5.36</td></tr>
+          <tr><th>DeepSeek alone</th><td class="num">12 / 12</td><td class="num">$15.67</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">It escalated <strong>4 of 12</strong>, so two thirds of the work never reaches the expensive model. Running it live on the suite confirmed the replay exactly: 6 of 6, escalating 2, flipping both.</p>
+    <p class="sub">The obvious design escalates a confident finding for a second opinion. Our measurements say the opposite. TypeSafe issued no wrong verdict and no false positive in 24 investigations, so every one of its misses is an abstention. <strong>Escalate what the loop gives up on, not what it concludes.</strong></p>
+  </section>
+
+  <section class="slide">
     <div class="eyebrow">Policy</div>
-    <h2>The loop tunes itself from its own traces</h2>
+    <h2>Two more levers, measured not asserted</h2>
     <div class="cards">
-      <div class="card"><h3>A cascade recovers the gap</h3><p>Cheap provider first, escalating only what it refuses to answer. <strong>6 of 6</strong>, escalating 2, at a third of the larger model's cost.</p></div>
       <div class="card"><h3>The threshold was conservative</h3><p>Re-running the suite at seven thresholds costs two cents. Dropping 0.80 to 0.50 recovers a case with no wrong verdict at any value.</p></div>
       <div class="card"><h3>The traces label themselves</h3><p>Across four studies the providers never contradicted each other. All six disagreements were one giving up, spotted without any ground truth.</p></div>
     </div>
-    <p class="sub">The obvious design escalates a confident finding for a second opinion. Our measurements say the opposite: every miss was an abstention, so escalate what the loop gives up on, not what it concludes.</p>
+    <p class="sub">Neither touches the operation contract, which is the part that needs a human. Tuning a threshold on the same six cases you measure is overfitting, so the sweep is a lead rather than a setting to ship.</p>
   </section>
 
   <section class="slide">
@@ -309,7 +326,7 @@
   </section>
 
 </div>
-<div class="pager" id="pager" aria-live="polite">1 / 11</div>
+<div class="pager" id="pager" aria-live="polite"></div>
 <div class="hint">arrow keys to move</div>
 
 <script>
@@ -358,6 +375,7 @@
   const slides=[...document.querySelectorAll(".slide")];
   const current=()=>{let b=0,m=Infinity;slides.forEach((s,i)=>{const d=Math.abs(s.getBoundingClientRect().top);if(d<m){m=d;b=i;}});return b;};
   const go=i=>slides[Math.max(0,Math.min(slides.length-1,i))].scrollIntoView({block:"start"});
+  pager.textContent=`1 / ${slides.length}`;
   deck.addEventListener("scroll",()=>{pager.textContent=`${current()+1} / ${slides.length}`;},{passive:true});
   document.addEventListener("keydown",e=>{
     if(["ArrowRight","PageDown"," "].includes(e.key)){e.preventDefault();go(current()+1);}
