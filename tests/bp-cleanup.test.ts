@@ -68,6 +68,9 @@ test("prepares a checksummed private packet and dry-runs without credentials or 
   assert.equal(preview.includes("sha256:"), false);
   const output = execFileSync(process.execPath, [resolve("scripts/replay-bp-cleanup.ts"), "--packet", packet], { env: { ...process.env, TYPESAFE_API_KEY: "", WANDB_API_KEY: "" }, encoding: "utf8" });
   assert.match(output, /No network calls/);
+  const traceDryRun = execFileSync(process.execPath, [resolve("scripts/replay-bp-cleanup.ts"), "--packet", packet, "--trace"], { env: { ...process.env, TYPESAFE_API_KEY: "", WANDB_API_KEY: "" }, encoding: "utf8" });
+  assert.match(traceDryRun, /No network calls/);
+  assert.match(traceDryRun, /Tracing is enabled for the provider replay/);
   assert.equal((await readdir(packet)).some(n => n.startsWith("replay-")), false);
   await writeFile(join(packet, "run.json"), "{}");
   assert.throws(() => execFileSync(process.execPath, [resolve("scripts/replay-bp-cleanup.ts"), "--packet", packet], { stdio: "pipe" }));

@@ -68,8 +68,12 @@ part of that model input.
 `npm run bp:replay -- --packet <private-packet-directory>` validates the pair
 without network calls. Once provider use is authorized, add `--send-to-typesafe`
 to investigate the reference and candidate using the existing loop. This command
-uses TypeSafe directly, with **no W&B/Weave tracing**. Receipts stay beside the
-private packet; open their `evaluation.json` in the local viewer.
+uses TypeSafe directly. Add `--trace` to enable W&B/Weave tracing in `WEAVE_PROJECT`:
+the trace contains only projected evidence, questions, and model judgments; raw
+logs and local provenance stay private. Each trace is read back to verify its
+completed investigation and child calls. Tracing is off when the flag is omitted,
+and a dry run makes no network calls even with `--trace`. Receipts stay beside the
+private packet; open their `evaluation.json` in the local viewer for trace links.
 
 This is a development pair, not a reliability benchmark. It checks recorded worker
 cleanup only; it lacks independent product logs and exact run-time spec revisions.
