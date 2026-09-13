@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createDeepSeekJudge } from "../src/investigation/deepseek.ts";
+import { createDeepSeekJudge, resolveMaxTokens } from "../src/investigation/deepseek.ts";
 import type { ChoiceQuestion } from "../src/investigation/types.ts";
 
 const questions: Record<string, ChoiceQuestion> = {
@@ -82,4 +82,13 @@ test("DeepSeek sanitizes failures and never retries", async () => {
   await assert.rejects(transport({}, questions), /^Error: DeepSeek request failed$/);
   assert.throws(() => createDeepSeekJudge({ apiKey: "", project: "team/project" }), /WANDB_API_KEY/);
   assert.throws(() => createDeepSeekJudge({ apiKey: "test", project: "" }), /WANDB_INFERENCE_PROJECT/);
+});
+
+test("the response budget defaults to 8192 and rejects unusable overrides", () => {
+  assert.equal(resolveMaxTokens(undefined), 8192);
+  assert.equal(resolveMaxTokens(""), 8192);
+  assert.equal(resolveMaxTokens("16384"), 16384);
+  for (const bad of ["0", "512", "abc", "8192.5", "99999999"]) {
+    assert.throws(() => resolveMaxTokens(bad), /WANDB_INFERENCE_MAX_TOKENS/);
+  }
 });

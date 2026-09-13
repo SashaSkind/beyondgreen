@@ -5,16 +5,19 @@ import { parseArgs } from "node:util";
 import * as weave from "weave";
 import { createTracedInvestigation, verifyInvestigationTrace } from "../src/investigation/tracing.ts";
 import { loadLinkdingEvidence } from "../src/investigation/evidence.ts";
+import { loadDocumensoEvidence } from "../src/investigation/documenso-evidence.ts";
 import { createTypeSafeJudge } from "../src/investigation/typesafe.ts";
 import { createDeepSeekJudge } from "../src/investigation/deepseek.ts";
 
 async function main() {
-  const { values } = parseArgs({ options: { run: { type: "string" }, baseline: { type: "string" }, provider: { type: "string", default: "typesafe" } } });
+  const { values } = parseArgs({ options: { run: { type: "string" }, baseline: { type: "string" }, provider: { type: "string", default: "typesafe" }, app: { type: "string", default: "linkding" } } });
   if (!values.run || !values.baseline) throw new Error("usage");
   if (!process.env.WANDB_API_KEY?.trim()) throw new Error("credentials");
   const project = process.env.WEAVE_PROJECT?.trim() || "beyond-green";
   if (!/^[\w-]+(?:\/[\w-]+)?$/.test(project)) throw new Error("project");
-  const source = await loadLinkdingEvidence(resolve(values.run), resolve(values.baseline));
+  const loaders = { linkding: loadLinkdingEvidence, documenso: loadDocumensoEvidence };
+  if (!Object.hasOwn(loaders, values.app)) throw new Error("usage");
+  const source = await loaders[values.app as keyof typeof loaders](resolve(values.run), resolve(values.baseline));
   if (!["typesafe", "deepseek"].includes(values.provider)) throw new Error("usage");
   const baseJudge = values.provider === "typesafe" ? createTypeSafeJudge() : createDeepSeekJudge();
   const client = await weave.init(project);
@@ -48,7 +51,7 @@ try {
 } catch (error) {
   const kind = error instanceof Error ? error.message : "unknown";
   console.error(kind === "usage"
-    ? "Usage: npm run investigate -- --run <capture-directory> --baseline <known-good-directory> [--provider typesafe|deepseek]"
+    ? "Usage: npm run investigate -- --run <capture-directory> --baseline <known-good-directory> [--app linkding|documenso] [--provider typesafe|deepseek]"
     : kind === "trace"
       ? "Investigation saved locally, but the Weave trace could not be verified."
       : "Investigation failed. Check artifact validity, provider credentials, project access, and connectivity.");

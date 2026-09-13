@@ -2,7 +2,21 @@ import { parseJudgment } from "./choice-response.ts";
 import type { ChoiceQuestion, Judge, Json } from "./types.ts";
 
 type Options = { apiKey?: string; model?: string; project?: string; fetch?: typeof globalThis.fetch };
-export const DEEPSEEK_SETTINGS = { maxTokens: 8192, timeoutMs: 90_000, reasoning: true } as const;
+// A response budget too small for the evidence truncates mid-reasoning and
+// yields no answer, so it is recorded in every receipt rather than hidden.
+export function resolveMaxTokens(value: string | undefined): number {
+  if (value === undefined || value.trim() === "") return 8192;
+  const tokens = Number(value);
+  if (!Number.isSafeInteger(tokens) || tokens < 1024 || tokens > 65536) {
+    throw new Error("WANDB_INFERENCE_MAX_TOKENS must be an integer between 1024 and 65536");
+  }
+  return tokens;
+}
+export const DEEPSEEK_SETTINGS = {
+  maxTokens: resolveMaxTokens(process.env.WANDB_INFERENCE_MAX_TOKENS),
+  timeoutMs: 180_000,
+  reasoning: true,
+} as const;
 
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid response");
