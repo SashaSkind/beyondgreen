@@ -100,7 +100,13 @@ failing a test.
     [documenso-held-out.md](docs/experiments/documenso-held-out.md). The premise
     that a pre-existing test passes on defective code is now observed, not
     inferred.
-11. [ ] **Write the Documenso collector** so the investigator can actually read
+11. [x] **Tuned the loop from its own traces.** A cheap-first cascade reaches
+    6 of 6 where the cheap provider alone reaches 4, at a third of the expensive
+    provider's cost. A measured threshold sweep shows the 0.80 default is
+    conservative on this suite. Provider disagreements collect into a review set
+    with no labels, and all six found were one tier abstaining rather than two
+    contradicting. See [loop-policy.md](docs/experiments/loop-policy.md).
+12. [ ] **Write the Documenso collector** so the investigator can actually read
     that capture. It needs HTTP recording and a Postgres snapshot before
     teardown, normalised into the shape
     [evidence.ts](src/investigation/evidence.ts) expects, plus a contract for
