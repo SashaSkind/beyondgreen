@@ -7,11 +7,12 @@ function judgment(choices: Record<string, string>, confidence = 0.95): Judgment 
   return { model: "test-double", latencyMs: 1, usage: { inputTokens: 10, outputTokens: 2 },
     answers: Object.fromEntries(Object.entries(choices).map(([key, choice]) => [key, { choice, confidence, probabilities: { [choice]: 1 } }])) };
 }
-function source(): EvidenceSource & { requested: EvidenceKey[] } {
+function source(): EvidenceSource & { requested: EvidenceKey[]; required: EvidenceKey[] } {
   const requested: EvidenceKey[] = [];
   return {
     initial: { test: { passed: true }, counts: { before: 9, after: 8 } },
     catalog: { database_state: "Recorded state", operation_contract: "Required behavior", known_good_run: "Reference observations" },
+    required: ["database_state", "operation_contract"],
     requested,
     async retrieve(key) {
       requested.push(key);
@@ -175,4 +176,36 @@ test("a critic reselecting already retrieved evidence is reported as an invalid 
   ]));
   assert.equal(result.verdict, "insufficient");
   assert.equal(result.reason, "invalid_evidence_choice");
+});
+
+// A second application declares its own catalog and its own mandatory readings.
+// The engine must gate on what the source requires, not on Linkding's keys.
+test("the mandatory evidence set comes from the source rather than the engine", async () => {
+  const evidence = source();
+  evidence.required = ["operation_contract"];
+  const result = await investigate(evidence, scripted([
+    judgment({ hypothesis: "suspected_violation" }),
+    judgment({ assessment: "insufficient", next_evidence: "operation_contract" }),
+    judgment({ hypothesis: "suspected_violation" }),
+    judgment({ assessment: "supported", next_evidence: "none" }),
+    judgment({ verdict: "regression", grounding: "sufficient" }),
+  ]));
+  assert.equal(result.verdict, "regression");
+  assert.deepEqual(result.evidenceIds, ["operation_contract"]);
+});
+
+test("a source demanding evidence it cannot supply is rejected", async () => {
+  const evidence = source();
+  evidence.required = ["database_state", "nonexistent_source"];
+  await assert.rejects(investigate(evidence, scripted([])), /Invalid investigation limits|required evidence/i);
+});
+
+test("the state offered to each role names the source's own requirements", async () => {
+  const evidence = source();
+  evidence.required = ["known_good_run"];
+  const states: Json[] = [];
+  await investigate(evidence, scripted([judgment({ hypothesis: "unknown" })], states));
+  const first = states[0];
+  assert.ok(first && typeof first === "object" && !Array.isArray(first));
+  assert.deepEqual(first.requiredEvidence, ["known_good_run"]);
 });

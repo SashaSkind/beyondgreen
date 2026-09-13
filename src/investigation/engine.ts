@@ -31,6 +31,9 @@ export async function investigate(source: EvidenceSource, judge: Judge, options:
   if (!Number.isInteger(maxRounds) || maxRounds < 1 || maxRounds > 10 || !Number.isFinite(minConfidence) || minConfidence < 0 || minConfidence > 1) {
     throw new Error("Invalid investigation limits");
   }
+  if (!source.required.length || !source.required.every((key) => Object.hasOwn(source.catalog, key))) {
+    throw new Error("Source declares required evidence it cannot supply");
+  }
   const started = performance.now();
   const result: Investigation = {
     verdict: "insufficient", reason: "budget_exhausted", scope: "observed operation only",
@@ -48,7 +51,7 @@ export async function investigate(source: EvidenceSource, judge: Judge, options:
     const state: Json = {
       role, initial: source.initial, retrieved: structuredClone(result.retrieved) as Json,
       hypothesis: last ? { choice: last, meaning: meanings[last] } : null,
-      requiredEvidence: ["database_state", "operation_contract"],
+      requiredEvidence: [...source.required],
       availableEvidence: Object.fromEntries(Object.entries(source.catalog).filter(([key]) => !Object.hasOwn(result.retrieved, key))),
     };
     const judgment = await judge(state, questions);
@@ -69,21 +72,21 @@ export async function investigate(source: EvidenceSource, judge: Judge, options:
       const available = Object.fromEntries(Object.entries(source.catalog).filter(([key]) => !Object.hasOwn(result.retrieved, key)));
       const critic = await ask("Critic", {
         assessment: {
-          type: "choice", instructions: "Challenge the current hypothesis against actual retrieved evidence. Both database_state and operation_contract are required for support. Unknown is not a confirmed finding.",
+          type: "choice", instructions: `Challenge the current hypothesis against actual retrieved evidence. All required evidence (${source.required.join(", ")}) must be retrieved before support. Unknown is not a confirmed finding.`,
           criteria: {
-            supported: "The retrieved database and contract substantiate the current consistent or suspected_violation hypothesis.",
+            supported: "The retrieved evidence substantiates the current consistent or suspected_violation hypothesis.",
             refuted: "Retrieved evidence contradicts the current hypothesis.",
             insufficient: "Necessary evidence is missing, ambiguous, or does not yet support a definite hypothesis.",
           },
         },
         next_evidence: {
-          type: "choice", instructions: "Choose the most useful missing evidence. Retrieve missing required database_state and operation_contract before stopping. Choose none only if available evidence cannot help or both required sources already justify a final decision.",
+          type: "choice", instructions: `Choose the most useful missing evidence. Retrieve every missing required source (${source.required.join(", ")}) before stopping. Choose none only if available evidence cannot help or the required sources already justify a final decision.`,
           criteria: { ...available, none: "No additional available evidence is needed or useful." },
         },
       });
       const assessment = critic.answers.assessment;
       const hypothesis = result.hypotheses.at(-1)!;
-      const complete = result.evidenceIds.includes("database_state") && result.evidenceIds.includes("operation_contract");
+      const complete = source.required.every((key) => result.evidenceIds.includes(key));
       if (assessment.choice === "supported" && assessment.confidence >= minConfidence && complete && hypothesis !== "unknown") {
         const verified = await ask("Verifier", {
           verdict: {

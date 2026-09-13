@@ -163,6 +163,7 @@ export async function loadLinkdingEvidence(currentDir: string, baselineDir: stri
       operation_contract: "Pinned normal archive implementation and the state it preserves.",
       known_good_run: "Observed archive operation and database snapshots from a supplied known-good run.",
     },
+    required: ["database_state", "operation_contract"],
     async retrieve(key): Promise<Json> {
       switch (key) {
         case "database_state": return snapshots(currentDir, current);
