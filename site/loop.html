@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside the Loop</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{--bg:#0e1513;--surface:#151e1a;--text:#eef4f1;--muted:#93a69d;--border:#27332e;
+    --primary:#5fb397;--error:#e37a73;--warning:#d3a63f;--second:#6f9fd8;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--sans:"Source Sans 3",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.45;
+    -webkit-font-smoothing:antialiased}
+  #stage{position:fixed;inset:0;z-index:0;display:block;cursor:grab}
+  #stage.dragging{cursor:grabbing}
+  .veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 40%,transparent 45%,rgba(6,10,9,.8) 100%)}
+
+  .panel{background:rgba(15,23,20,.92);border:1px solid var(--border);border-radius:10px;
+    backdrop-filter:blur(7px)}
+  .lab{font-family:var(--mono);font-size:.6rem;letter-spacing:.17em;text-transform:uppercase;
+    color:var(--muted);font-weight:400}
+
+  /* Title sits top-left; it names the case these two runs share. */
+  .head{position:fixed;z-index:3;top:0;left:0;padding:1.1rem 1.3rem;max-width:30rem}
+  .head h1{margin:.2rem 0 .3rem;font-size:1.22rem;font-weight:650;letter-spacing:-.01em}
+  .head p{margin:0;font-size:.83rem;color:var(--muted);max-width:34ch}
+  .head a{color:var(--primary)}
+
+  /* The detail for whichever step is hovered or pinned. */
+  .info{position:fixed;z-index:3;top:1.1rem;right:1.1rem;width:20.5rem;max-width:calc(100vw - 2.2rem);
+    padding:.85rem .95rem;max-height:calc(100vh - 2.2rem);overflow-y:auto}
+  .info.idle .body{display:none}
+  .info h2{margin:.35rem 0 .1rem;font-size:1rem;font-weight:650}
+  .info .sub{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin:0 0 .6rem}
+  .info .hint{font-size:.8rem;color:var(--muted);margin:.35rem 0 0}
+  .quote{font-size:.78rem;color:var(--muted);border-left:2px solid var(--border);
+    padding-left:.6rem;margin:.5rem 0 .65rem}
+  .dist{margin:.15rem 0 .6rem}
+  .dist .row{display:grid;grid-template-columns:8.5rem 1fr 2.6rem;gap:.45rem;align-items:center;
+    font-family:var(--mono);font-size:.7rem;padding:.12rem 0}
+  .dist .track{display:block;height:6px;background:#1c2723;border-radius:3px;overflow:hidden}
+  .dist .fill{display:block;height:100%;min-width:2px;background:var(--primary);border-radius:3px}
+  .dist .row.pick .fill{background:var(--text)}
+  .dist .row.pick span:first-child{color:var(--text)}
+  .dist .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:.3rem .8rem;font-family:var(--mono);
+    font-size:.68rem;color:var(--muted);border-top:1px solid var(--border);padding-top:.55rem}
+  .meta b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+  .gateline{font-size:.78rem;margin:.5rem 0 0;padding:.45rem .55rem;border-radius:6px;
+    background:rgba(211,166,63,.1);border:1px solid rgba(211,166,63,.34);color:#e7c887}
+  .gateline.pass{background:rgba(95,179,151,.1);border-color:rgba(95,179,151,.38);color:#9fdcc4}
+
+  /* Transport: scrub the recorded steps, or let them play. */
+  .deck{position:fixed;z-index:3;left:50%;transform:translateX(-50%);bottom:1.1rem;
+    display:flex;gap:.75rem;align-items:center;padding:.55rem .8rem;flex-wrap:wrap;
+    justify-content:center;max-width:calc(100vw - 2rem)}
+  .deck button{font-family:var(--mono);font-size:.72rem;color:var(--text);background:#1b2622;
+    border:1px solid var(--border);border-radius:6px;padding:.34rem .7rem;cursor:pointer}
+  .deck button:hover{border-color:var(--primary)}
+  .deck button[aria-pressed="true"]{border-color:var(--primary);color:var(--primary)}
+  .deck input[type=range]{width:min(34vw,15rem);accent-color:var(--primary)}
+  .deck .step{font-family:var(--mono);font-size:.72rem;color:var(--muted);
+    font-variant-numeric:tabular-nums;min-width:8.5rem}
+  .deck .step b{color:var(--text);font-weight:500}
+
+  /* Legend doubles as the per-run verdict readout. */
+  .runs{position:fixed;z-index:3;left:1.1rem;bottom:1.1rem;display:grid;gap:.4rem;
+    padding:.7rem .8rem;min-width:15rem}
+  .runs .r{display:grid;grid-template-columns:auto 1fr auto;gap:.5rem;align-items:center;
+    font-size:.8rem;cursor:pointer;background:none;border:0;color:inherit;text-align:left;padding:.1rem 0}
+  .runs .r[aria-pressed="false"]{opacity:.4}
+  .runs .dot{width:.62rem;height:.62rem;border-radius:50%}
+  .runs .v{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+  .runs .v.bad{color:var(--warning)}
+  .runs .v.good{color:var(--primary)}
+
+  .help{position:fixed;z-index:3;right:1.1rem;bottom:1.1rem;padding:.5rem .7rem;
+    font-family:var(--mono);font-size:.64rem;color:var(--muted);line-height:1.8}
+  .help kbd{background:#1b2622;border:1px solid var(--border);border-radius:4px;
+    padding:.04rem .3rem;font-family:inherit;color:var(--text)}
+
+  .fallback{position:fixed;inset:0;z-index:9;display:none;place-content:center;text-align:center;
+    padding:2rem;background:var(--bg)}
+  /* On a phone the three overlays have to queue up the bottom of the screen
+     instead of each claiming the same corner. */
+  @media (max-width:820px){
+    .head{max-width:calc(100vw - 1.4rem);padding:.8rem .9rem}
+    .head h1{font-size:1.05rem}
+    .head p{font-size:.78rem}
+    .info{top:auto;bottom:7.6rem;right:.6rem;left:.6rem;width:auto;max-height:34vh}
+    .runs{left:.6rem;right:.6rem;bottom:4.1rem;min-width:0}
+    .deck{left:.6rem;right:.6rem;bottom:.6rem;transform:none;flex-wrap:nowrap;
+      gap:.5rem;justify-content:space-between}
+    .deck input[type=range]{width:auto;flex:1 1 auto;min-width:0}
+    .deck .step{min-width:0;white-space:nowrap;font-size:.66rem}
+    .deck button{white-space:nowrap;padding:.34rem .55rem}
+    #reset{display:none}
+    .help{display:none}
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div class="veil"></div>
+
+<header class="head">
+  <div class="lab">Beyond&nbsp;Green · one case, two judges</div>
+  <h1>Inside the loop</h1>
+  <p id="caseline">Loading the recorded runs…</p>
+</header>
+
+<aside class="info panel idle" id="info" aria-live="polite">
+  <div class="lab">Step detail</div>
+  <p class="hint" id="hint">Hover a node, or scrub the steps below. Right-drag to fly around.</p>
+  <div class="body" id="infoBody"></div>
+</aside>
+
+<div class="runs panel" id="runs"></div>
+
+<div class="deck panel">
+  <button id="play" aria-pressed="false">▶ Play</button>
+  <input id="scrub" type="range" min="0" max="1" value="0" step="1" aria-label="Step through the investigation">
+  <span class="step" id="stepLabel">—</span>
+  <button id="reset">Reset view</button>
+</div>
+
+<div class="help panel">
+  <div><kbd>right-drag</kbd> orbit · <kbd>wheel</kbd> zoom</div>
+  <div><kbd>click</kbd> pin a step · <kbd>←</kbd><kbd>→</kbd> step</div>
+</div>
+
+<div class="fallback" id="fallback">
+  <div>
+    <h1>Inside the loop</h1>
+    <p style="color:var(--muted);max-width:40ch;margin:0 auto">This page needs WebGL. The same
+    numbers are in the <a href="v3.html" style="color:var(--primary)">presentation</a>.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="loop-data.js"></script>
+<script>
+(function () {
+  "use strict";
+  var DATA = window.LOOP_DATA;
+  if (!window.THREE || !DATA) { document.getElementById("fallback").style.display = "grid"; return; }
+
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- what the geometry means -------------------------------------------
+  // A role is a fixed seat on a ring, so a step's horizontal place says who
+  // spoke. Height is that step's confidence, and a single translucent plane
+  // sits at the gate. The loop can therefore be read without the legend: the
+  // path circles the ring as the investigation bounces between roles, and you
+  // can see by eye which claims ever got above the bar.
+  var GATE = DATA.minConfidence;      // 0.8 — the bar a supported claim must clear
+  var H = 9;                          // world units for confidence 1.0
+  var R = 4.6;                        // ring radius
+  var SEATS = {
+    Scout:        Math.PI,
+    Critic:       Math.PI / 2,
+    Investigator: 0,
+    Verifier:     -Math.PI / 2
+  };
+  var C = {
+    bg: 0x0e1513, ring: 0x2a4b41, seat: 0x39705f, text: 0xeef4f1,
+    pass: 0x7fd8b8, under: 0xd3a63f, gate: 0xd3a63f, second: 0x6f9fd8, dim: 0x486b60
+  };
+  var RUN_TINT = { typesafe: 0x7fd8b8, cascade: 0x6f9fd8 };
+  var RUN_X = { typesafe: -9.6, cascade: 9.6 };
+
+  // A step "clears the gate" only when it is the kind of claim the gate
+  // governs: a Critic saying the evidence supports the hypothesis, or the
+  // Verifier's own verdict. A confident "insufficient" is not a pass.
+  function gateRelevant(step) {
+    var a = step.answers[0];
+    if (step.role === "Critic") return a.choice === "supported";
+    if (step.role === "Verifier") return true;
+    return false;
+  }
+  function clears(step) {
+    return gateRelevant(step) && step.answers[0].confidence >= GATE;
+  }
+
+  // ---- scene --------------------------------------------------------------
+  var canvas = document.getElementById("stage"), renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  } catch (e) {
+    document.getElementById("fallback").style.display = "grid"; return;
+  }
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(C.bg);
+  scene.fog = new THREE.Fog(C.bg, 34, 78);
+  var camera = new THREE.PerspectiveCamera(46, 1, 0.1, 200);
+
+  scene.add(new THREE.HemisphereLight(0xcfeadd, 0x0b1210, 0.85));
+  var key = new THREE.DirectionalLight(0xffffff, 0.7); key.position.set(6, 14, 10); scene.add(key);
+
+  function label(text, opts) {
+    opts = opts || {};
+    var size = opts.size || 44, pad = 12, weight = opts.weight || 500;
+    var font = weight + " " + size + "px " + (opts.mono !== false
+      ? "'IBM Plex Mono', ui-monospace, monospace" : "'Source Sans 3', system-ui, sans-serif");
+    var m = document.createElement("canvas").getContext("2d");
+    m.font = font;
+    var w = Math.ceil(m.measureText(text).width) + pad * 2, h = size + pad * 2;
+    var cv = document.createElement("canvas");
+    cv.width = w * 2; cv.height = h * 2;
+    var g = cv.getContext("2d");
+    g.scale(2, 2); g.font = font; g.textBaseline = "middle";
+    g.fillStyle = opts.color || "#eef4f1";
+    g.globalAlpha = opts.alpha == null ? 1 : opts.alpha;
+    g.fillText(text, pad, h / 2);
+    var tex = new THREE.CanvasTexture(cv);
+    tex.minFilter = THREE.LinearFilter; tex.anisotropy = 4;
+    var sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false, depthTest: opts.depthTest !== false
+    }));
+    var s = (opts.scale || 1) * 0.017;
+    sp.scale.set(w * s, h * s, 1);
+    sp.userData.baseScale = sp.scale.clone();
+    return sp;
+  }
+
+  // ---- the gate plane, shared by both runs so heights compare directly ----
+  var gateY = GATE * H;
+  var gateGroup = new THREE.Group(); gateGroup.position.y = gateY; scene.add(gateGroup);
+  var planeW = 38, planeD = 15;
+  var gatePlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(planeW, planeD),
+    new THREE.MeshBasicMaterial({ color: C.gate, transparent: true, opacity: 0.05,
+      side: THREE.DoubleSide, depthWrite: false })
+  );
+  gatePlane.rotation.x = -Math.PI / 2;
+  gateGroup.add(gatePlane);
+  var gateEdge = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.PlaneGeometry(planeW, planeD)),
+    new THREE.LineBasicMaterial({ color: C.gate, transparent: true, opacity: 0.5 })
+  );
+  gateEdge.rotation.x = -Math.PI / 2;
+  gateGroup.add(gateEdge);
+  var gateTag = label("confidence gate · " + GATE.toFixed(2), { size: 34, color: "#d3a63f", scale: 1 });
+  gateTag.position.set(-planeW / 2 + 3.4, 0.62, -planeD / 2 - 0.4);
+  gateGroup.add(gateTag);
+
+  // ---- one run: a ring of seats, a climbing path, a node per step ---------
+  var runs = [];
+  DATA.runs.forEach(function (run) {
+    var group = new THREE.Group();
+    group.position.x = RUN_X[run.id] || 0;
+    scene.add(group);
+
+    var tint = RUN_TINT[run.id] || C.pass;
+
+    // The floor ring and the four seats on it.
+    var ring = new THREE.Mesh(
+      new THREE.RingGeometry(R - 0.045, R + 0.045, 96),
+      new THREE.MeshBasicMaterial({ color: C.ring, transparent: true, opacity: .85, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    group.add(ring);
+
+    var seatPos = {};
+    Object.keys(SEATS).forEach(function (role) {
+      var a = SEATS[role];
+      var p = new THREE.Vector3(Math.cos(a) * R, 0, Math.sin(a) * R);
+      seatPos[role] = p;
+      var post = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.035, H, 6),
+        new THREE.MeshBasicMaterial({ color: C.seat, transparent: true, opacity: .22 })
+      );
+      post.position.set(p.x, H / 2, p.z);
+      group.add(post);
+      var disc = new THREE.Mesh(
+        new THREE.CircleGeometry(0.42, 24),
+        new THREE.MeshBasicMaterial({ color: C.seat, transparent: true, opacity: .5 })
+      );
+      disc.rotation.x = -Math.PI / 2; disc.position.set(p.x, 0.02, p.z);
+      group.add(disc);
+      var tag = label(role, { size: 36, color: "#9fb7ad", scale: .92 });
+      tag.position.set(p.x, -0.75, p.z);
+      group.add(tag);
+    });
+
+    // The run's own title, standing above its ring.
+    var title = label(run.label, { size: 46, weight: 600, mono: false,
+      color: "#" + tint.toString(16).padStart(6, "0"), scale: 1.15 });
+    title.position.set(0, H + 3.5, 0);
+    group.add(title);
+
+    // A node per recorded step, seated by role and raised by confidence.
+    var nodes = [], pts = [];
+    var totalVisits = {}, seenVisits = {}, asks = 0;
+    run.steps.forEach(function (st) { totalVisits[st.role] = (totalVisits[st.role] || 0) + 1; });
+    run.steps.forEach(function (step) {
+      var seat = seatPos[step.role] || new THREE.Vector3();
+      var conf = step.answers[0].confidence;
+      var k = seenVisits[step.role] = (seenVisits[step.role] || 0) + 1;
+      var spread = (k - 1 - (totalVisits[step.role] - 1) / 2) * 1.75;
+      var dir = seat.length() ? seat.clone().normalize() : new THREE.Vector3(1, 0, 0);
+      var tan = new THREE.Vector3(-dir.z, 0, dir.x);
+      var p = new THREE.Vector3(
+        seat.x + tan.x * spread, Math.max(conf * H, 0.16), seat.z + tan.z * spread);
+      pts.push(p);
+
+      var passed = clears(step);
+      var relevant = gateRelevant(step);
+      // Form, not colour, carries the distinction the argument rests on: a
+      // claim the gate governs is a solid polyhedron, anything else a small
+      // open marker. Colour only reinforces it.
+      var mesh;
+      if (relevant) {
+        mesh = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(0.46, 1),
+          new THREE.MeshStandardMaterial({
+            color: passed ? C.pass : C.under, roughness: .35, metalness: .05,
+            emissive: passed ? C.pass : C.under, emissiveIntensity: .3
+          })
+        );
+      } else {
+        mesh = new THREE.Mesh(
+          new THREE.TorusGeometry(0.32, 0.075, 10, 22),
+          new THREE.MeshStandardMaterial({ color: tint, roughness: .4,
+            emissive: tint, emissiveIntensity: .18 })
+        );
+        mesh.rotation.x = Math.PI / 2;
+      }
+      mesh.position.copy(p);
+      mesh.userData = { run: run, step: step, passed: passed, relevant: relevant, home: p.clone() };
+      group.add(mesh);
+      nodes.push(mesh);
+
+      // A dropline makes the height readable against the gate plane.
+      var drop = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(p.x, 0, p.z), p]),
+        new THREE.LineBasicMaterial({ color: passed ? C.pass : C.dim, transparent: true, opacity: .3 })
+      );
+      group.add(drop);
+
+      // The number, floating beside its node.
+      var n = label(step.answers[0].confidence.toFixed(2), {
+        size: 34, color: passed ? "#bff3de" : "#e7c887", scale: .92
+      });
+      n.position.set(p.x, p.y + 0.78, p.z);
+      group.add(n);
+      mesh.userData.numTag = n;
+
+      // Where the Critic asked for evidence, show what it asked for.
+      var ev = step.answers.find(function (a) { return a.q === "next_evidence"; });
+      if (ev && ev.choice !== "none") {
+        var flat = new THREE.Vector2(p.x, p.z);
+        if (flat.lengthSq() === 0) flat.set(1, 0);
+        flat.setLength(flat.length() + 2.6);
+        var et = label("→ " + ev.choice, { size: 30, color: "#93a69d", scale: .72, alpha: .9 });
+        et.position.set(flat.x, p.y - (0.72 + 1.15 * asks), flat.y);
+        asks += 1;
+        group.add(et);
+      }
+    });
+
+    // The path, in the order the steps actually ran.
+    var pathLine = null, pathGeo = null;
+    if (pts.length > 1) {
+      var curve = new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.12);
+      pathGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(pts.length * 26));
+      pathLine = new THREE.Line(pathGeo, new THREE.LineBasicMaterial({
+        color: tint, transparent: true, opacity: .55
+      }));
+      group.add(pathLine);
+      var travelled = new THREE.Line(pathGeo.clone(), new THREE.LineBasicMaterial({
+        color: 0xdff6ec, transparent: true, opacity: .95
+      }));
+      group.add(travelled);
+      var t = { line: travelled, curve: curve, count: pts.length * 26 };
+      run._travel = t;
+    }
+
+    // Outcome plate: what this run finally did, and what it cost.
+    var outcome = run.reason === "verified"
+      ? run.verdict + " · verified"
+      : run.verdict + " · " + run.reason;
+    var plate = label(outcome, {
+      size: 36, color: run.correct ? "#9fdcc4" : "#e7c887", scale: 1
+    });
+    plate.position.set(0, H + 2.5, 0);
+    group.add(plate);
+
+    // The cascade's first tier abstained and was thrown away; its steps are not
+    // in this receipt, so it is drawn as a marker rather than a second path.
+    if (run.escalations > 0 && run.attempts.length > 1) {
+      var first = run.attempts[0];
+      var esc = label("tier 1 · " + first.tier + " " + first.verdict + " in "
+        + (first.latencyMs / 1000).toFixed(1) + "s → escalated", {
+        size: 30, color: "#d3a63f", scale: .86
+      });
+      esc.position.set(0, H + 1.7, 0);
+      group.add(esc);
+    }
+
+    runs.push({ spec: run, group: group, nodes: nodes, visible: true });
+  });
+
+  // ---- right-drag orbit ---------------------------------------------------
+  // cdnjs mirrors only the core r128 bundle, so OrbitControls is not available
+  // here. This is the small part of it the page needs, and keeping it local
+  // means the orbit is an offset on a damped target rather than a second
+  // camera controller fighting the one the page already has.
+  var view = { az: -Math.PI / 2.15, el: 0.30, dist: 37, tx: 0, ty: 5.6, tz: 0 };
+  var want = Object.assign({}, view);
+  var HOME = Object.assign({}, want);
+  var EL_MIN = -0.35, EL_MAX = 1.32;
+
+  var drag = null;
+  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  canvas.addEventListener("pointerdown", function (e) {
+    if (e.button !== 0 && e.button !== 2) return;
+    drag = { x: e.clientX, y: e.clientY, moved: 0, button: e.button };
+    canvas.setPointerCapture(e.pointerId);
+    canvas.classList.add("dragging");
+  });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!drag) { hover(e); return; }
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY;
+    drag.moved += Math.abs(dx) + Math.abs(dy);
+    touched = true;
+    want.az -= dx * 0.005;
+    want.el = Math.max(EL_MIN, Math.min(EL_MAX, want.el + dy * 0.004));
+  });
+  function endDrag(e) {
+    if (!drag) return;
+    var wasClick = drag.moved < 5 && drag.button === 0;
+    drag = null;
+    canvas.classList.remove("dragging");
+    if (wasClick) pick(e, true);
+  }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", function () { drag = null; canvas.classList.remove("dragging"); });
+  canvas.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    touched = true;
+    want.dist = Math.max(9, Math.min(190, want.dist * (1 + Math.sign(e.deltaY) * 0.09)));
+  }, { passive: false });
+
+  document.getElementById("reset").addEventListener("click", function () {
+    touched = false;
+    Object.assign(want, HOME);
+  });
+
+  // ---- picking ------------------------------------------------------------
+  var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  var pinned = null, hovered = null, lastHover = 0;
+
+  function nodesInPlay() {
+    return runs.filter(function (r) { return r.visible; })
+      .reduce(function (acc, r) { return acc.concat(r.nodes); }, []);
+  }
+  function hit(e) {
+    var rect = canvas.getBoundingClientRect();
+    ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    var list = ray.intersectObjects(nodesInPlay(), false);
+    return list.length ? list[0].object : null;
+  }
+  function hover(e) {
+    var now = Date.now();
+    if (now - lastHover < 40) return;
+    lastHover = now;
+    var m = hit(e);
+    hovered = m;
+    canvas.style.cursor = m ? "pointer" : (drag ? "grabbing" : "grab");
+    if (!pinned) render(m);
+  }
+  function pick(e, pin) {
+    var m = hit(e);
+    if (pin) {
+      pinned = (pinned === m) ? null : m;
+      if (pinned) setScrub(indexOf(pinned));
+    }
+    render(pinned || m);
+  }
+  function indexOf(mesh) {
+    var run = runs.find(function (r) { return r.spec.id === mesh.userData.run.id; });
+    return run ? run.nodes.indexOf(mesh) : 0;
+  }
+
+  // ---- the info panel -----------------------------------------------------
+  var info = document.getElementById("info"), infoBody = document.getElementById("infoBody"),
+      hint = document.getElementById("hint");
+
+  function esc(s) { return String(s).replace(/[&<>]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+
+  function render(mesh) {
+    if (!mesh) { info.classList.add("idle"); hint.style.display = ""; return; }
+    info.classList.remove("idle"); hint.style.display = "none";
+    var step = mesh.userData.step, run = mesh.userData.run;
+    var primary = step.answers[0];
+    var html = '<h2>' + esc(step.role) + '</h2>'
+      + '<p class="sub">' + esc(run.label) + ' · step ' + step.i + ' of ' + run.steps.length
+      + ' · ' + esc(step.model) + '</p>';
+
+    step.answers.forEach(function (a) {
+      html += '<div class="lab">' + esc(a.q.replace(/_/g, " ")) + '</div>';
+      if (a.criteria && a.criteria[a.choice]) {
+        html += '<p class="quote">' + esc(a.criteria[a.choice]) + '</p>';
+      }
+      html += '<div class="dist">';
+      Object.keys(a.probs).sort(function (x, y) { return a.probs[y] - a.probs[x]; })
+        .forEach(function (k) {
+          var v = a.probs[k];
+          html += '<div class="row' + (k === a.choice ? ' pick' : '') + '">'
+            + '<span>' + esc(k) + '</span>'
+            + '<span class="track"><span class="fill" style="width:' + (v * 100).toFixed(0) + '%"></span></span>'
+            + '<span class="num">' + v.toFixed(2) + '</span></div>';
+        });
+      html += '</div>';
+    });
+
+    // Say plainly how this step stood against the gate.
+    var rel = mesh.userData.relevant, pass = mesh.userData.passed;
+    var line = rel
+      ? (pass
+        ? 'Clears the gate: ' + esc(primary.choice) + ' at ' + primary.confidence.toFixed(2)
+          + ' ≥ ' + GATE.toFixed(2) + '.'
+        : 'Under the gate: ' + esc(primary.choice) + ' at ' + primary.confidence.toFixed(2)
+          + ' &lt; ' + GATE.toFixed(2) + ', so the loop kept going instead of concluding.')
+      : 'The gate does not govern this step — it governs a Critic’s <i>supported</i> '
+        + 'assessment and the Verifier’s verdict.';
+    html += '<p class="gateline' + (rel && pass ? ' pass' : '') + '">' + line + '</p>';
+
+    html += '<div class="meta">'
+      + '<span>latency <b>' + (step.latencyMs / 1000).toFixed(1) + 's</b></span>'
+      + '<span>in <b>' + step.usage.inputTokens.toLocaleString() + '</b> tok</span>'
+      + '<span>confidence <b>' + primary.confidence.toFixed(2) + '</b></span>'
+      + '<span>out <b>' + step.usage.outputTokens.toLocaleString() + '</b> tok</span>'
+      + '</div>';
+    infoBody.innerHTML = html;
+  }
+
+  // ---- legend / run toggles ----------------------------------------------
+  var runsEl = document.getElementById("runs");
+  runs.forEach(function (r) {
+    var b = document.createElement("button");
+    b.className = "r"; b.setAttribute("aria-pressed", "true");
+    var tint = "#" + (RUN_TINT[r.spec.id] || C.pass).toString(16).padStart(6, "0");
+    b.innerHTML = '<span class="dot" style="background:' + tint + '"></span>'
+      + '<span>' + esc(r.spec.label) + '</span>'
+      + '<span class="v ' + (r.spec.correct ? "good" : "bad") + '">'
+      + esc(r.spec.reason) + ' · ' + (r.spec.latencyMs / 1000).toFixed(1) + 's</span>';
+    b.addEventListener("click", function () {
+      r.visible = !r.visible;
+      r.group.visible = r.visible;
+      b.setAttribute("aria-pressed", String(r.visible));
+      if (pinned && pinned.userData.run.id === r.spec.id && !r.visible) { pinned = null; render(null); }
+    });
+    runsEl.appendChild(b);
+  });
+
+  // ---- transport ----------------------------------------------------------
+  var maxSteps = Math.max.apply(null, runs.map(function (r) { return r.nodes.length; }));
+  var scrub = document.getElementById("scrub"), stepLabel = document.getElementById("stepLabel"),
+      playBtn = document.getElementById("play");
+  scrub.max = String(maxSteps);
+  var cursor = maxSteps, playing = false, playT = 0;
+
+  function setScrub(i) { cursor = Math.max(0, Math.min(maxSteps, i + 1)); scrub.value = String(cursor); paint(); }
+  function paint() {
+    stepLabel.textContent = cursor === 0 ? "before the first step"
+      : "step " + cursor + " / " + maxSteps;
+    runs.forEach(function (r) {
+      r.nodes.forEach(function (m, i) {
+        var on = i < cursor;
+        m.visible = on;
+        if (m.userData.numTag) m.userData.numTag.visible = on;
+      });
+      var t = r.spec._travel;
+      if (t) {
+        var frac = Math.max(0, Math.min(1, (cursor - 1) / Math.max(1, r.nodes.length - 1)));
+        t.line.geometry.setDrawRange(0, Math.max(2, Math.floor(frac * t.count)));
+        t.line.visible = cursor > 1;
+      }
+    });
+  }
+  scrub.addEventListener("input", function () { cursor = +scrub.value; playing = false; playBtn.setAttribute("aria-pressed", "false"); playBtn.textContent = "▶ Play"; paint(); });
+  playBtn.addEventListener("click", function () {
+    playing = !playing;
+    if (playing && cursor >= maxSteps) cursor = 0;
+    playBtn.setAttribute("aria-pressed", String(playing));
+    playBtn.textContent = playing ? "❚❚ Pause" : "▶ Play";
+    playT = 0; paint();
+  });
+  addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight") { setScrub(cursor); }
+    else if (e.key === "ArrowLeft") { setScrub(cursor - 2); }
+    else return;
+    e.preventDefault();
+  });
+
+  document.getElementById("caseline").innerHTML =
+    'Case <b>' + esc(DATA.case) + '</b> — expected <b>' + esc(DATA.expected)
+    + '</b>. Same loop, same gate (' + GATE.toFixed(2) + '), same evidence. '
+    + 'Height is confidence; the plane is the gate.';
+
+  // ---- resize / frame -----------------------------------------------------
+  // Place the rings for the shape of the viewport, then pull the camera back
+  // far enough that the whole drawing fits, rather than trusting a fixed number
+  // that only ever suited one screen.
+  function layout(w, h) {
+    var portrait = w < 820;
+    runs.forEach(function (r) {
+      var off = RUN_X[r.spec.id] || 0;
+      r.group.position.set(portrait ? 0 : off, 0, portrait ? off : 0);
+    });
+    gatePlane.geometry.dispose(); gateEdge.geometry.dispose();
+    var pw = portrait ? 17 : 38, pd = portrait ? 34 : 15;
+    gatePlane.geometry = new THREE.PlaneGeometry(pw, pd);
+    gateEdge.geometry = new THREE.EdgesGeometry(new THREE.PlaneGeometry(pw, pd));
+    gateTag.position.set(-pw / 2 + 5.2, 0.62, -pd / 2 - 0.4);
+
+    var halfV = Math.tan((camera.fov * Math.PI / 180) / 2);
+    var halfH = halfV * camera.aspect;
+    var spanX = Math.max((portrait ? 0 : Math.abs(RUN_X.typesafe)) + R + 3.4, pw / 2 + 1.5);
+    var spanY = (H + 6) / 2 + (portrait ? 5 : 0);
+    HOME.dist = Math.max(spanX / halfH, spanY / halfV) * 1.16;
+    HOME.el = portrait ? 0.5 : 0.30;
+    HOME.ty = portrait ? 5.0 : 5.6;
+  }
+
+  function resize() {
+    var w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    layout(w, h);
+  }
+  var touched = false;
+  addEventListener("resize", function () {
+    resize();
+    // Respect a viewer who has already flown somewhere; otherwise re-fit.
+    if (!touched) { want.dist = HOME.dist; want.el = HOME.el; want.ty = HOME.ty; }
+  });
+  resize();
+  ["dist", "el", "ty"].forEach(function (k) { want[k] = view[k] = HOME[k]; });
+  paint();
+
+  function damp(a, b, lambda, dt) { return b + (a - b) * Math.exp(-lambda * dt); }
+  var clock = new THREE.Clock(), tmpV = new THREE.Vector3();
+
+  function frame() {
+    var dt = Math.min(clock.getDelta(), 0.05);
+    var L = reduced ? 40 : 7;
+    ["az", "el", "dist", "tx", "ty", "tz"].forEach(function (k) {
+      view[k] = damp(view[k], want[k], L, dt);
+    });
+    var ce = Math.cos(view.el), se = Math.sin(view.el);
+    camera.position.set(
+      view.tx + Math.cos(view.az) * ce * view.dist,
+      view.ty + se * view.dist,
+      view.tz + Math.sin(view.az) * ce * view.dist
+    );
+    camera.lookAt(view.tx, view.ty, view.tz);
+
+    if (playing) {
+      playT += dt;
+      if (playT > (reduced ? 0.25 : 0.85)) {
+        playT = 0;
+        cursor = cursor >= maxSteps ? maxSteps : cursor + 1;
+        scrub.value = String(cursor);
+        paint();
+        if (cursor >= maxSteps) {
+          playing = false;
+          playBtn.setAttribute("aria-pressed", "false");
+          playBtn.textContent = "▶ Play";
+        }
+      }
+    }
+
+    // The pinned or hovered node breathes, so the panel's subject is obvious.
+    var focus = pinned || hovered;
+    runs.forEach(function (r) {
+      r.nodes.forEach(function (m) {
+        var target = m === focus ? 1.42 : 1;
+        m.scale.setScalar(damp(m.scale.x, target, 9, dt));
+      });
+    });
+
+    // Keep the gate tag legible from wherever the viewer has flown to.
+    gateTag.material.opacity = 0.55 + 0.35 * Math.abs(Math.sin(view.el));
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>

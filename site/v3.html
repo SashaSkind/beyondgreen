@@ -34,6 +34,9 @@
   .slide{position:fixed;inset:0;z-index:2;display:grid;align-content:center;
     padding:6vh 7vw;pointer-events:none;opacity:0;transition:opacity .45s ease}
   .slide.on{opacity:1}
+  .slide a.go{pointer-events:auto;display:inline-block;margin-top:.2rem;color:var(--primary);
+    font-family:var(--mono);font-size:.78rem;text-decoration:none;border-bottom:1px solid currentColor}
+  .slide a.go:hover{color:var(--text)}
   .slide .inner{width:100%;max-width:62rem;margin:0 auto;display:grid;gap:1.3rem;justify-items:start}
   .slide.mid .inner{justify-items:center;text-align:center}
 
@@ -135,6 +138,7 @@ assertReloads(0)</pre>
 <section class="slide" data-shot="loop">
   <div class="inner">
     <p class="sub" style="max-width:32ch">A Scout proposes. A Critic attacks it and picks what to read. An Investigator revises. A Verifier rules, and can veto.</p>
+    <a class="go" href="loop.html">Walk the real trace in 3D →</a>
   </div>
 </section>
 
