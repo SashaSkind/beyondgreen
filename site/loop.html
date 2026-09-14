@@ -245,8 +245,8 @@
   );
   gateEdge.rotation.x = -Math.PI / 2;
   gateGroup.add(gateEdge);
-  var gateTag = label("confidence gate · " + GATE.toFixed(2), { size: 34, color: "#d3a63f", scale: 1 });
-  gateTag.position.set(-planeW / 2 + 3.4, 0.62, -planeD / 2 - 0.4);
+  var gateTag = label("gate · " + GATE.toFixed(2), { size: 34, color: "#d3a63f", scale: .78 });
+  gateTag.position.set(0, 0.62, -planeD / 2 - 1.0);
   gateGroup.add(gateTag);
 
   // ---- one run: a ring of seats, a climbing path, a node per step ---------
@@ -289,10 +289,11 @@
     });
 
     // The run's own title, standing above its ring.
+    var plates = [];
     var title = label(run.label, { size: 46, weight: 600, mono: false,
       color: "#" + tint.toString(16).padStart(6, "0"), scale: 1.15 });
     title.position.set(0, H + 3.5, 0);
-    group.add(title);
+    group.add(title); plates.push(title);
 
     // A node per recorded step, seated by role and raised by confidence.
     var nodes = [], pts = [];
@@ -389,7 +390,7 @@
       size: 36, color: run.correct ? "#9fdcc4" : "#e7c887", scale: 1
     });
     plate.position.set(0, H + 2.5, 0);
-    group.add(plate);
+    group.add(plate); plates.push(plate);
 
     // The cascade's first tier abstained and was thrown away; its steps are not
     // in this receipt, so it is drawn as a marker rather than a second path.
@@ -400,10 +401,10 @@
         size: 30, color: "#d3a63f", scale: .86
       });
       esc.position.set(0, H + 1.7, 0);
-      group.add(esc);
+      group.add(esc); plates.push(esc);
     }
 
-    runs.push({ spec: run, group: group, nodes: nodes, visible: true });
+    runs.push({ spec: run, group: group, nodes: nodes, visible: true, plates: plates });
   });
 
   // ---- right-drag orbit ---------------------------------------------------
@@ -559,6 +560,8 @@
       r.visible = !r.visible;
       r.group.visible = r.visible;
       b.setAttribute("aria-pressed", String(r.visible));
+      layout(innerWidth, innerHeight);
+      if (!touched) { want.tx = HOME.tx; want.ty = HOME.ty; want.tz = HOME.tz; want.dist = HOME.dist; }
       if (pinned && pinned.userData.run.id === r.spec.id && !r.visible) { pinned = null; render(null); }
     });
     runsEl.appendChild(b);
@@ -613,25 +616,93 @@
   // Place the rings for the shape of the viewport, then pull the camera back
   // far enough that the whole drawing fits, rather than trusting a fixed number
   // that only ever suited one screen.
+  // Measure what is actually on screen and aim at its middle, rather than
+  // trusting a hand-picked target height that drifts as soon as anything moves.
+  function contentBox() {
+    var box = new THREE.Box3();
+    runs.forEach(function (r) {
+      if (!r.visible) return;
+      r.group.updateMatrixWorld(true);
+      box.expandByObject(r.group);
+    });
+    if (box.isEmpty()) box.setFromCenterAndSize(new THREE.Vector3(0, H / 2, 0), new THREE.Vector3(20, H, 20));
+    return box;
+  }
+
   function layout(w, h) {
     var portrait = w < 820;
     runs.forEach(function (r) {
       var off = RUN_X[r.spec.id] || 0;
-      r.group.position.set(portrait ? 0 : off, 0, portrait ? off : 0);
+      r.group.position.set(portrait ? 0 : off, 0, portrait ? off * 1.25 : 0);
+      r.plates.forEach(function (sp) { sp.visible = !portrait; });
     });
+    HOME.el = portrait ? 0.5 : 0.30;
+
+    var box = contentBox();
+    var size = box.getSize(new THREE.Vector3());
+    var mid = box.getCenter(new THREE.Vector3());
+    HOME.tx = mid.x; HOME.ty = mid.y; HOME.tz = mid.z;
+
+    // The gate plane is sized to the drawing so it frames it instead of
+    // running off both edges of the screen.
+    var pw = size.x + 5, pd = size.z + 5;
     gatePlane.geometry.dispose(); gateEdge.geometry.dispose();
-    var pw = portrait ? 17 : 38, pd = portrait ? 34 : 15;
     gatePlane.geometry = new THREE.PlaneGeometry(pw, pd);
     gateEdge.geometry = new THREE.EdgesGeometry(new THREE.PlaneGeometry(pw, pd));
-    gateTag.position.set(-pw / 2 + 5.2, 0.62, -pd / 2 - 0.4);
+    gateTag.position.set(0, 0.55, -pd / 2 - 1.0);
 
+    // A first estimate, good enough to start the screen-space pass from.
     var halfV = Math.tan((camera.fov * Math.PI / 180) / 2);
     var halfH = halfV * camera.aspect;
-    var spanX = Math.max((portrait ? 0 : Math.abs(RUN_X.typesafe)) + R + 3.4, pw / 2 + 1.5);
-    var spanY = (H + 6) / 2 + (portrait ? 5 : 0);
-    HOME.dist = Math.max(spanX / halfH, spanY / halfV) * 1.16;
-    HOME.el = portrait ? 0.5 : 0.30;
-    HOME.ty = portrait ? 5.0 : 5.6;
+    var spanH = Math.max(size.x, pw) / 2 + 1.5;
+    var spanV = (size.y + size.z * Math.sin(HOME.el)) / 2 + 1.5;
+    HOME.dist = Math.max(spanH / halfH, spanV / halfV) * 1.06;
+
+    // The centre of the box is not the centre of the picture: perspective tilts
+    // the floor toward the viewer, so the drawing sits lower on screen than its
+    // own middle. Project it, measure the error, and move the aim point to
+    // cancel it. Two passes is plenty to converge.
+    for (var pass = 0; pass < 3; pass++) recentre(box);
+  }
+
+  // Measured against the drawing's bright pixels, not the box: the box is an
+  // axis-aligned hull whose corners are mostly empty, so it has to overflow
+  // the frame a little for the picture itself to fill it. Leaves ~100px
+  // clear on every side, which is where the overlay panels sit.
+  var FILL = 1.08, FILL_PORTRAIT = 0.92;
+
+  function recentre(box) {
+    var ce = Math.cos(HOME.el), se = Math.sin(HOME.el);
+    camera.position.set(
+      HOME.tx + Math.cos(HOME.az) * ce * HOME.dist,
+      HOME.ty + se * HOME.dist,
+      HOME.tz + Math.sin(HOME.az) * ce * HOME.dist
+    );
+    camera.lookAt(HOME.tx, HOME.ty, HOME.tz);
+    camera.updateMatrixWorld(true);
+
+    var v = new THREE.Vector3(), lo = { x: Infinity, y: Infinity }, hi = { x: -Infinity, y: -Infinity };
+    for (var i = 0; i < 8; i++) {
+      v.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z);
+      v.project(camera);
+      lo.x = Math.min(lo.x, v.x); hi.x = Math.max(hi.x, v.x);
+      lo.y = Math.min(lo.y, v.y); hi.y = Math.max(hi.y, v.y);
+    }
+    if (!isFinite(lo.x) || !isFinite(lo.y)) return;
+
+    // Slide the aim point along the camera's own axes by the measured error.
+    var offX = (lo.x + hi.x) / 2, offY = (lo.y + hi.y) / 2;
+    var reachV = Math.tan((camera.fov * Math.PI / 180) / 2) * HOME.dist;
+    var reachH = reachV * camera.aspect;
+    var right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+    var up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+    HOME.tx += right.x * offX * reachH + up.x * offY * reachV;
+    HOME.ty += right.y * offX * reachH + up.y * offY * reachV;
+    HOME.tz += right.z * offX * reachH + up.z * offY * reachV;
+
+    var need = Math.max((hi.x - lo.x) / 2, (hi.y - lo.y) / 2);
+    var aim = innerWidth < 820 ? FILL_PORTRAIT : FILL;
+    if (need > 0) HOME.dist = Math.max(12, Math.min(180, HOME.dist * need / aim));
   }
 
   function resize() {
@@ -645,10 +716,12 @@
   addEventListener("resize", function () {
     resize();
     // Respect a viewer who has already flown somewhere; otherwise re-fit.
-    if (!touched) { want.dist = HOME.dist; want.el = HOME.el; want.ty = HOME.ty; }
+    if (!touched) {
+      ["dist", "el", "tx", "ty", "tz"].forEach(function (k) { want[k] = HOME[k]; });
+    }
   });
   resize();
-  ["dist", "el", "ty"].forEach(function (k) { want[k] = view[k] = HOME[k]; });
+  ["dist", "el", "tx", "ty", "tz"].forEach(function (k) { want[k] = view[k] = HOME[k]; });
   paint();
 
   function damp(a, b, lambda, dt) { return b + (a - b) * Math.exp(-lambda * dt); }
