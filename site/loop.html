@@ -30,10 +30,13 @@
   .head p{margin:0;font-size:.83rem;color:var(--muted);max-width:34ch}
   .head a{color:var(--primary)}
 
-  /* The detail for whichever step is hovered or pinned. */
+  /* The detail for the current slide, or whatever is hovered. */
   .info{position:fixed;z-index:3;top:1.1rem;right:1.1rem;width:20.5rem;max-width:calc(100vw - 2.2rem);
     padding:.85rem .95rem;max-height:calc(100vh - 2.2rem);overflow-y:auto}
-  .info.idle .body{display:none}
+  .info .lede{font-size:.85rem;color:var(--text);margin:.3rem 0 .75rem}
+  .cmp{display:grid;gap:.75rem;margin:.35rem 0 .3rem}
+  .pbar{position:fixed;left:0;top:0;height:2px;width:100%;z-index:4;pointer-events:none}
+  .pbar span{display:block;height:100%;width:0;background:var(--primary);transition:width .4s ease}
   .info h2{margin:.35rem 0 .1rem;font-size:1rem;font-weight:650}
   .info .sub{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin:0 0 .6rem}
   .info .hint{font-size:.8rem;color:var(--muted);margin:.35rem 0 0}
@@ -54,7 +57,7 @@
     background:rgba(211,166,63,.1);border:1px solid rgba(211,166,63,.34);color:#e7c887}
   .gateline.pass{background:rgba(95,179,151,.1);border-color:rgba(95,179,151,.38);color:#9fdcc4}
 
-  /* Transport: scrub the recorded steps, or let them play. */
+  /* Slide navigation. */
   .deck{position:fixed;z-index:3;left:50%;transform:translateX(-50%);bottom:1.1rem;
     display:flex;gap:.75rem;align-items:center;padding:.55rem .8rem;flex-wrap:wrap;
     justify-content:center;max-width:calc(100vw - 2rem)}
@@ -62,7 +65,6 @@
     border:1px solid var(--border);border-radius:6px;padding:.34rem .7rem;cursor:pointer}
   .deck button:hover{border-color:var(--primary)}
   .deck button[aria-pressed="true"]{border-color:var(--primary);color:var(--primary)}
-  .deck input[type=range]{width:min(34vw,15rem);accent-color:var(--primary)}
   .deck .step{font-family:var(--mono);font-size:.72rem;color:var(--muted);
     font-variant-numeric:tabular-nums;min-width:8.5rem}
   .deck .step b{color:var(--text);font-weight:500}
@@ -95,10 +97,9 @@
     .runs{left:.6rem;right:.6rem;bottom:4.1rem;min-width:0}
     .deck{left:.6rem;right:.6rem;bottom:.6rem;transform:none;flex-wrap:nowrap;
       gap:.5rem;justify-content:space-between}
-    .deck input[type=range]{width:auto;flex:1 1 auto;min-width:0}
     .deck .step{min-width:0;white-space:nowrap;font-size:.66rem}
     .deck button{white-space:nowrap;padding:.34rem .55rem}
-    #reset{display:none}
+    #free{display:none}
     .help{display:none}
   }
 </style>
@@ -113,24 +114,25 @@
   <p id="caseline">Loading the recorded runs…</p>
 </header>
 
-<aside class="info panel idle" id="info" aria-live="polite">
-  <div class="lab">Step detail</div>
-  <p class="hint" id="hint">Hover a node, or scrub the steps below. Right-drag to fly around.</p>
+<aside class="info panel" id="info" aria-live="polite">
+  <div class="lab" id="infoKicker">Inside the loop</div>
   <div class="body" id="infoBody"></div>
 </aside>
 
 <div class="runs panel" id="runs"></div>
 
 <div class="deck panel">
-  <button id="play" aria-pressed="false">▶ Play</button>
-  <input id="scrub" type="range" min="0" max="1" value="0" step="1" aria-label="Step through the investigation">
+  <button id="prev" aria-label="Previous slide">‹</button>
   <span class="step" id="stepLabel">—</span>
-  <button id="reset">Reset view</button>
+  <button id="next" aria-label="Next slide">›</button>
+  <button id="play" aria-pressed="false">▶ Play</button>
+  <button id="free" aria-pressed="false">Free look</button>
 </div>
+<div class="pbar"><span id="pfill"></span></div>
 
 <div class="help panel">
-  <div><kbd>right-drag</kbd> orbit · <kbd>wheel</kbd> zoom</div>
-  <div><kbd>click</kbd> pin a step · <kbd>←</kbd><kbd>→</kbd> step</div>
+  <div><kbd>←</kbd><kbd>→</kbd> slides · <kbd>space</kbd> play</div>
+  <div><kbd>right-drag</kbd> orbit · <kbd>click</kbd> a node</div>
 </div>
 
 <div class="fallback" id="fallback">
@@ -202,6 +204,8 @@
   scene.add(new THREE.HemisphereLight(0xcfeadd, 0x0b1210, 0.85));
   var key = new THREE.DirectionalLight(0xffffff, 0.7); key.position.set(6, 14, 10); scene.add(key);
 
+  var LABELS = [], LABEL_REF = 37;
+
   function label(text, opts) {
     opts = opts || {};
     var size = opts.size || 44, pad = 12, weight = opts.weight || 500;
@@ -225,6 +229,7 @@
     var s = (opts.scale || 1) * 0.017;
     sp.scale.set(w * s, h * s, 1);
     sp.userData.baseScale = sp.scale.clone();
+    LABELS.push(sp);
     return sp;
   }
 
@@ -348,7 +353,7 @@
       var n = label(step.answers[0].confidence.toFixed(2), {
         size: 34, color: passed ? "#bff3de" : "#e7c887", scale: .92
       });
-      n.position.set(p.x, p.y + 0.78, p.z);
+      n.position.set(p.x, p.y + 1.25, p.z);
       group.add(n);
       mesh.userData.numTag = n;
 
@@ -404,8 +409,39 @@
       group.add(esc); plates.push(esc);
     }
 
-    runs.push({ spec: run, group: group, nodes: nodes, visible: true, plates: plates });
+    runs.push({ spec: run, group: group, nodes: nodes, visible: true, enabled: true, plates: plates });
   });
+
+  // ---- focus furniture -----------------------------------------------------
+  var halo = new THREE.Mesh(
+    new THREE.RingGeometry(0.80, 0.92, 44),
+    new THREE.MeshBasicMaterial({ color: 0xdff6ec, transparent: true, opacity: .95,
+      side: THREE.DoubleSide, depthTest: false })
+  );
+  halo.renderOrder = 6; halo.visible = false; scene.add(halo);
+
+  var gapGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+  var gapLine = new THREE.Line(gapGeo, new THREE.LineDashedMaterial({
+    color: C.gate, dashSize: .34, gapSize: .26, transparent: true, opacity: .95, depthTest: false }));
+  gapLine.renderOrder = 6; gapLine.visible = false; scene.add(gapLine);
+
+  function markFocus(focus) {
+    if (!focus || !focus.visible) { halo.visible = gapLine.visible = false; return; }
+    focus.getWorldPosition(tmpV);
+    halo.position.copy(tmpV);
+    halo.quaternion.copy(camera.quaternion);
+    halo.material.color.setHex(focus.userData.passed ? 0xbff3de : 0xe7c887);
+    halo.visible = true;
+
+    var pos = gapGeo.attributes.position;
+    pos.setXYZ(0, tmpV.x, tmpV.y, tmpV.z);
+    pos.setXYZ(1, tmpV.x, gateY, tmpV.z);
+    pos.needsUpdate = true;
+    gapGeo.computeBoundingSphere();
+    gapLine.computeLineDistances();
+    gapLine.material.color.setHex(focus.userData.passed ? C.pass : C.gate);
+    gapLine.visible = Math.abs(tmpV.y - gateY) > 0.35;
+  }
 
   // ---- right-drag orbit ---------------------------------------------------
   // cdnjs mirrors only the core r128 bundle, so OrbitControls is not available
@@ -439,7 +475,7 @@
     var wasClick = drag.moved < 5 && drag.button === 0;
     drag = null;
     canvas.classList.remove("dragging");
-    if (wasClick) pick(e, true);
+    if (wasClick) pick(e);
   }
   canvas.addEventListener("pointerup", endDrag);
   canvas.addEventListener("pointercancel", function () { drag = null; canvas.classList.remove("dragging"); });
@@ -449,18 +485,271 @@
     want.dist = Math.max(9, Math.min(190, want.dist * (1 + Math.sign(e.deltaY) * 0.09)));
   }, { passive: false });
 
-  document.getElementById("reset").addEventListener("click", function () {
-    touched = false;
-    Object.assign(want, HOME);
-  });
+  // ---- reading a step ------------------------------------------------------
+  var info = document.getElementById("info"),
+      infoBody = document.getElementById("infoBody"),
+      infoKicker = document.getElementById("infoKicker");
 
-  // ---- picking ------------------------------------------------------------
+  function esc(s) { return String(s).replace(/[&<>]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+  function num(n) { return n.toLocaleString(); }
+
+  function distHtml(a) {
+    var html = '<div class="lab">' + esc(a.q.replace(/_/g, " ")) + '</div>';
+    if (a.criteria && a.criteria[a.choice]) {
+      html += '<p class="quote">' + esc(a.criteria[a.choice]) + '</p>';
+    }
+    html += '<div class="dist">';
+    Object.keys(a.probs).sort(function (x, y) { return a.probs[y] - a.probs[x]; })
+      .forEach(function (k) {
+        var v = a.probs[k];
+        html += '<div class="row' + (k === a.choice ? ' pick' : '') + '">'
+          + '<span>' + esc(k) + '</span>'
+          + '<span class="track"><span class="fill" style="width:' + (v * 100).toFixed(0) + '%"></span></span>'
+          + '<span class="num">' + v.toFixed(2) + '</span></div>';
+      });
+    return html + '</div>';
+  }
+
+  // How this step stood against the gate, in the terms of the rule it was held to.
+  function gateHtml(mesh) {
+    var primary = mesh.userData.step.answers[0];
+    var rel = mesh.userData.relevant, pass = mesh.userData.passed;
+    var line = rel
+      ? (pass
+        ? 'Clears the gate: ' + esc(primary.choice) + ' at ' + primary.confidence.toFixed(2)
+          + ' &ge; ' + GATE.toFixed(2) + '.'
+        : 'Under the gate: ' + esc(primary.choice) + ' at ' + primary.confidence.toFixed(2)
+          + ' &lt; ' + GATE.toFixed(2) + ', so the loop kept going instead of concluding.')
+      : 'The gate does not govern this step — it governs a Critic&rsquo;s <i>supported</i> '
+        + 'assessment and the Verifier&rsquo;s verdict.';
+    return '<p class="gateline' + (rel && pass ? ' pass' : '') + '">' + line + '</p>';
+  }
+
+  function stepHtml(mesh) {
+    var step = mesh.userData.step, run = mesh.userData.run, primary = step.answers[0];
+    var html = '<h2>' + esc(step.role) + '</h2>'
+      + '<p class="sub">' + esc(run.label) + ' &middot; step ' + step.i + ' of ' + run.steps.length
+      + ' &middot; ' + esc(step.model) + '</p>';
+    step.answers.forEach(function (a) { html += distHtml(a); });
+    html += gateHtml(mesh);
+    return html + '<div class="meta">'
+      + '<span>latency <b>' + (step.latencyMs / 1000).toFixed(1) + 's</b></span>'
+      + '<span>in <b>' + num(step.usage.inputTokens) + '</b> tok</span>'
+      + '<span>confidence <b>' + primary.confidence.toFixed(2) + '</b></span>'
+      + '<span>out <b>' + num(step.usage.outputTokens) + '</b> tok</span>'
+      + '</div>';
+  }
+
+  // One line saying what this step just did, read off the step itself.
+  function sentence(mesh) {
+    var st = mesh.userData.step, a = st.answers[0];
+    var ev = st.answers.filter(function (x) { return x.q === "next_evidence"; })[0];
+    var asks = ev && ev.choice !== "none" ? ev.choice : null;
+    if (st.role === "Scout") return "Opens the case, before any evidence has been pulled.";
+    if (st.role === "Investigator") return "Revises the hypothesis with the evidence now in hand.";
+    if (st.role === "Verifier") return "Rules on the case, with a veto if the grounding is thin.";
+    if (a.choice === "insufficient") {
+      return asks ? "Not convinced. Asks for " + asks + "."
+                  : "Not convinced, and nothing left to ask for.";
+    }
+    if (a.choice === "supported" && a.confidence < GATE) {
+      return asks ? "Agrees — but under the bar, so it fetches " + asks + " rather than conclude."
+                  : "Agrees — but under the bar, with nothing left to fetch.";
+    }
+    if (a.choice === "supported") return "Agrees, and clear of the bar. The loop may conclude.";
+    return "";
+  }
+
+  function outcomeLine(sp) {
+    if (sp.reason === "verified") {
+      return "A supported assessment cleared the bar, and the Verifier signed the result off.";
+    }
+    if (sp.reason === "critic_unconvinced") {
+      return "No supported assessment ever cleared the bar, and there was no evidence left to "
+        + "fetch, so it declined to answer rather than guess.";
+    }
+    return "Exited as " + sp.reason.replace(/_/g, " ") + ".";
+  }
+
+  function compareLine() {
+    var quiet = runs.filter(function (r) { return r.spec.reason !== "verified"; })[0];
+    var said = runs.filter(function (r) { return r.spec.reason === "verified"; })[0];
+    if (!quiet || !said) return "Both runs exited the same way.";
+    return quiet.spec.label + " refused in " + (quiet.spec.latencyMs / 1000).toFixed(1) + "s. "
+      + said.spec.label + " answered " + said.spec.verdict + " in "
+      + (said.spec.latencyMs / 1000).toFixed(1) + "s. Same loop, same gate — what separates "
+      + "them is whether a supported assessment ever cleared " + GATE.toFixed(2) + ".";
+  }
+
+  // ---- the deck ------------------------------------------------------------
+  // A slide per recorded step, bracketed by a slide for each run and two
+  // overviews. Going forward flies to the next node and reads it out; nothing
+  // about the model changes, only what is framed and how much is revealed.
+  var SLIDES = [{ kind: "intro" }];
+  runs.forEach(function (r) {
+    SLIDES.push({ kind: "run", run: r });
+    r.nodes.forEach(function (m, i) { SLIDES.push({ kind: "step", run: r, node: m, i: i }); });
+    SLIDES.push({ kind: "outcome", run: r });
+  });
+  SLIDES.push({ kind: "compare" });
+
+  var slide = 0, playing = false, playT = 0, free = false, isPortrait = false;
+
+  function slideHtml(s) {
+    if (s.kind === "intro") {
+      return '<h2>' + esc(DATA.case) + '</h2>'
+        + '<p class="sub">expected ' + esc(DATA.expected) + ' &middot; gate ' + GATE.toFixed(2)
+        + ' &middot; ' + DATA.evidence.length + ' sources</p>'
+        + '<p class="lede">Two judges run the same case through the same loop against the same '
+        + 'gate. A role is a seat on the ring, height is that step&rsquo;s confidence, and the '
+        + 'plane is the bar a <i>supported</i> claim has to clear.</p>'
+        + '<p class="lede">Step forward to walk both runs, one judgment at a time.</p>';
+    }
+    if (s.kind === "compare") {
+      var html = '<h2>What the bar bought</h2><div class="cmp">';
+      runs.forEach(function (r) {
+        var sp = r.spec;
+        html += '<div><div class="lab">' + esc(sp.label) + '</div>'
+          + '<p class="sub">' + esc(sp.verdict) + ' &middot; ' + esc(sp.reason) + '</p>'
+          + '<div class="meta"><span>took <b>' + (sp.latencyMs / 1000).toFixed(1) + 's</b></span>'
+          + '<span>out <b>' + num(sp.usage.outputTokens) + '</b> tok</span></div></div>';
+      });
+      return html + '</div><p class="lede">' + esc(compareLine()) + '</p>';
+    }
+    var sp = s.run.spec;
+    if (s.kind === "run") {
+      var models = {};
+      sp.steps.forEach(function (st) { models[st.model] = 1; });
+      var h = '<h2>' + esc(sp.label) + '</h2>'
+        + '<p class="sub">' + sp.steps.length + ' steps &middot; '
+        + esc(Object.keys(models).join(", ")) + '</p>';
+      if (sp.escalations > 0 && sp.attempts.length > 1) {
+        var t1 = sp.attempts[0];
+        h += '<p class="lede">Tier one (' + esc(t1.tier) + ') came back <b>' + esc(t1.verdict)
+          + '</b> in ' + (t1.latencyMs / 1000).toFixed(1) + 's, so the case escalated. These are '
+          + 'the steps of the tier that answered — tier one&rsquo;s own steps were discarded and '
+          + 'are not in this receipt.</p>';
+      } else {
+        h += '<p class="lede">One tier, no escalation.</p>';
+      }
+      return h;
+    }
+    return '<h2>' + esc(sp.verdict) + ' &middot; ' + esc(sp.reason) + '</h2>'
+      + '<p class="sub">' + esc(sp.label)
+      + (sp.correct ? ' &middot; matched the expected verdict' : ' &middot; did not answer') + '</p>'
+      + '<div class="meta">'
+      + '<span>took <b>' + (sp.latencyMs / 1000).toFixed(1) + 's</b></span>'
+      + '<span>in <b>' + num(sp.usage.inputTokens) + '</b> tok</span>'
+      + '<span>steps <b>' + sp.steps.length + '</b></span>'
+      + '<span>out <b>' + num(sp.usage.outputTokens) + '</b> tok</span>'
+      + '</div><p class="lede">' + esc(outcomeLine(sp)) + '</p>';
+  }
+
+  function describe(s, preview) {
+    if (preview) {
+      infoKicker.textContent = "Step detail";
+      infoBody.innerHTML = stepHtml(preview);
+      return;
+    }
+    if (s.kind === "step") {
+      infoKicker.textContent = "Step " + s.node.userData.step.i + " · " + s.run.spec.label;
+      infoBody.innerHTML = '<p class="lede">' + esc(sentence(s.node)) + '</p>' + stepHtml(s.node);
+      return;
+    }
+    infoKicker.textContent = s.kind === "intro" ? "Inside the loop"
+      : s.kind === "compare" ? "Side by side"
+      : s.kind === "run" ? "The run" : "Outcome";
+    infoBody.innerHTML = slideHtml(s);
+  }
+
+  // Reveal only as far as the slide has walked, and show one run at a time
+  // while walking it, so a close-up is never cluttered by the other trace.
+  function stage(s) {
+    var solo = (s.kind === "run" || s.kind === "step" || s.kind === "outcome") ? s.run : null;
+    runs.forEach(function (r) {
+      var on = r.enabled && (!solo || r === solo);
+      r.visible = on;
+      r.group.visible = on;
+      var upto = (solo === r && s.kind === "step") ? s.i + 1 : r.nodes.length;
+      r.nodes.forEach(function (m, i) {
+        var vis = on && i < upto;
+        m.visible = vis;
+        if (m.userData.numTag) m.userData.numTag.visible = vis;
+      });
+      var t = r.spec._travel;
+      if (t) {
+        var frac = Math.max(0, Math.min(1, (upto - 1) / Math.max(1, r.nodes.length - 1)));
+        t.line.geometry.setDrawRange(0, Math.max(2, Math.floor(frac * t.count)));
+        t.line.visible = on && upto > 1;
+      }
+      r.plates.forEach(function (sp) { sp.visible = on && !isPortrait && s.kind !== "step"; });
+    });
+  }
+
+  // The detail panel owns the right of the screen, so the aim point slides
+  // right and the subject lands in the clear space beside it.
+  function biased(goal) {
+    var reachV = Math.tan((camera.fov * Math.PI / 180) / 2) * goal.dist;
+    if (isPortrait) {
+      // On a phone the panel takes the lower half, so aim below the subject
+      // and it rises into the clear space above.
+      goal.ty -= reachV * 0.32;
+      return goal;
+    }
+    var reachH = reachV * camera.aspect;
+    goal.tx += Math.sin(goal.az) * reachH * 0.2;
+    goal.tz += -Math.cos(goal.az) * reachH * 0.2;
+    return goal;
+  }
+
+  function goalFor(s) {
+    if (s.kind === "intro" || s.kind === "compare") {
+      return { az: HOME.az, el: HOME.el, dist: HOME.dist, tx: HOME.tx, ty: HOME.ty, tz: HOME.tz };
+    }
+    var at = s.run.group.position;
+    if (s.kind === "run" || s.kind === "outcome") {
+      return biased({ az: HOME.az, el: 0.26, dist: HOME.dist * (isPortrait ? 0.78 : 0.62),
+                      tx: at.x, ty: H * 0.55, tz: at.z });
+    }
+    // A step is framed with the bar it is judged against, always in shot, so
+    // "above" or "below" stays legible however far in the camera goes.
+    var p = s.node.userData.home;
+    var gap = Math.abs(p.y - gateY);
+    return biased({
+      az: HOME.az + (s.run.spec.id === "cascade" ? -0.16 : 0.16),
+      el: 0.2,
+      dist: Math.max(10, Math.min(29, 10 + gap * 1.5)) * (isPortrait ? 1.35 : 1),
+      tx: at.x + p.x, ty: p.y * 0.62 + gateY * 0.38, tz: at.z + p.z
+    });
+  }
+
+  function reframe() {
+    if (free) return;
+    Object.assign(want, goalFor(SLIDES[slide]));
+    touched = false;
+  }
+
+  var stepLabel = document.getElementById("stepLabel"), pfill = document.getElementById("pfill");
+
+  function goTo(i) {
+    slide = Math.max(0, Math.min(SLIDES.length - 1, i));
+    var s = SLIDES[slide];
+    stage(s);
+    reframe();
+    describe(s);
+    stepLabel.textContent = (slide + 1) + " / " + SLIDES.length;
+    pfill.style.width = ((slide + 1) / SLIDES.length * 100) + "%";
+  }
+
+  // ---- picking -------------------------------------------------------------
   var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-  var pinned = null, hovered = null, lastHover = 0;
+  var hovered = null, lastHover = 0;
 
   function nodesInPlay() {
     return runs.filter(function (r) { return r.visible; })
-      .reduce(function (acc, r) { return acc.concat(r.nodes); }, []);
+      .reduce(function (acc, r) { return acc.concat(r.nodes); }, [])
+      .filter(function (m) { return m.visible; });
   }
   function hit(e) {
     var rect = canvas.getBoundingClientRect();
@@ -475,78 +764,29 @@
     if (now - lastHover < 40) return;
     lastHover = now;
     var m = hit(e);
+    if (m === hovered) return;
     hovered = m;
     canvas.style.cursor = m ? "pointer" : (drag ? "grabbing" : "grab");
-    if (!pinned) render(m);
+    // Hovering previews; letting go returns to whatever the slide was saying.
+    describe(SLIDES[slide], m && m !== slideNode() ? m : null);
   }
-  function pick(e, pin) {
+  function slideNode() {
+    var s = SLIDES[slide];
+    return s.kind === "step" ? s.node : null;
+  }
+  function pick(e) {
     var m = hit(e);
-    if (pin) {
-      pinned = (pinned === m) ? null : m;
-      if (pinned) setScrub(indexOf(pinned));
-    }
-    render(pinned || m);
-  }
-  function indexOf(mesh) {
-    var run = runs.find(function (r) { return r.spec.id === mesh.userData.run.id; });
-    return run ? run.nodes.indexOf(mesh) : 0;
-  }
-
-  // ---- the info panel -----------------------------------------------------
-  var info = document.getElementById("info"), infoBody = document.getElementById("infoBody"),
-      hint = document.getElementById("hint");
-
-  function esc(s) { return String(s).replace(/[&<>]/g, function (c) {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
-
-  function render(mesh) {
-    if (!mesh) { info.classList.add("idle"); hint.style.display = ""; return; }
-    info.classList.remove("idle"); hint.style.display = "none";
-    var step = mesh.userData.step, run = mesh.userData.run;
-    var primary = step.answers[0];
-    var html = '<h2>' + esc(step.role) + '</h2>'
-      + '<p class="sub">' + esc(run.label) + ' · step ' + step.i + ' of ' + run.steps.length
-      + ' · ' + esc(step.model) + '</p>';
-
-    step.answers.forEach(function (a) {
-      html += '<div class="lab">' + esc(a.q.replace(/_/g, " ")) + '</div>';
-      if (a.criteria && a.criteria[a.choice]) {
-        html += '<p class="quote">' + esc(a.criteria[a.choice]) + '</p>';
+    if (!m) return;
+    for (var i = 0; i < SLIDES.length; i++) {
+      if (SLIDES[i].kind === "step" && SLIDES[i].node === m) {
+        if (free) setFree(false);
+        goTo(i);
+        return;
       }
-      html += '<div class="dist">';
-      Object.keys(a.probs).sort(function (x, y) { return a.probs[y] - a.probs[x]; })
-        .forEach(function (k) {
-          var v = a.probs[k];
-          html += '<div class="row' + (k === a.choice ? ' pick' : '') + '">'
-            + '<span>' + esc(k) + '</span>'
-            + '<span class="track"><span class="fill" style="width:' + (v * 100).toFixed(0) + '%"></span></span>'
-            + '<span class="num">' + v.toFixed(2) + '</span></div>';
-        });
-      html += '</div>';
-    });
-
-    // Say plainly how this step stood against the gate.
-    var rel = mesh.userData.relevant, pass = mesh.userData.passed;
-    var line = rel
-      ? (pass
-        ? 'Clears the gate: ' + esc(primary.choice) + ' at ' + primary.confidence.toFixed(2)
-          + ' ≥ ' + GATE.toFixed(2) + '.'
-        : 'Under the gate: ' + esc(primary.choice) + ' at ' + primary.confidence.toFixed(2)
-          + ' &lt; ' + GATE.toFixed(2) + ', so the loop kept going instead of concluding.')
-      : 'The gate does not govern this step — it governs a Critic’s <i>supported</i> '
-        + 'assessment and the Verifier’s verdict.';
-    html += '<p class="gateline' + (rel && pass ? ' pass' : '') + '">' + line + '</p>';
-
-    html += '<div class="meta">'
-      + '<span>latency <b>' + (step.latencyMs / 1000).toFixed(1) + 's</b></span>'
-      + '<span>in <b>' + step.usage.inputTokens.toLocaleString() + '</b> tok</span>'
-      + '<span>confidence <b>' + primary.confidence.toFixed(2) + '</b></span>'
-      + '<span>out <b>' + step.usage.outputTokens.toLocaleString() + '</b> tok</span>'
-      + '</div>';
-    infoBody.innerHTML = html;
+    }
   }
 
-  // ---- legend / run toggles ----------------------------------------------
+  // ---- legend / run toggles ------------------------------------------------
   var runsEl = document.getElementById("runs");
   runs.forEach(function (r) {
     var b = document.createElement("button");
@@ -557,60 +797,60 @@
       + '<span class="v ' + (r.spec.correct ? "good" : "bad") + '">'
       + esc(r.spec.reason) + ' · ' + (r.spec.latencyMs / 1000).toFixed(1) + 's</span>';
     b.addEventListener("click", function () {
-      r.visible = !r.visible;
-      r.group.visible = r.visible;
-      b.setAttribute("aria-pressed", String(r.visible));
+      r.enabled = !r.enabled;
+      b.setAttribute("aria-pressed", String(r.enabled));
       layout(innerWidth, innerHeight);
-      if (!touched) { want.tx = HOME.tx; want.ty = HOME.ty; want.tz = HOME.tz; want.dist = HOME.dist; }
-      if (pinned && pinned.userData.run.id === r.spec.id && !r.visible) { pinned = null; render(null); }
+      goTo(slide);
     });
     runsEl.appendChild(b);
   });
 
-  // ---- transport ----------------------------------------------------------
-  var maxSteps = Math.max.apply(null, runs.map(function (r) { return r.nodes.length; }));
-  var scrub = document.getElementById("scrub"), stepLabel = document.getElementById("stepLabel"),
-      playBtn = document.getElementById("play");
-  scrub.max = String(maxSteps);
-  var cursor = maxSteps, playing = false, playT = 0;
+  // ---- deck controls -------------------------------------------------------
+  var playBtn = document.getElementById("play"), freeBtn = document.getElementById("free");
+  document.getElementById("prev").addEventListener("click", function () { stop(); goTo(slide - 1); });
+  document.getElementById("next").addEventListener("click", function () { stop(); goTo(slide + 1); });
 
-  function setScrub(i) { cursor = Math.max(0, Math.min(maxSteps, i + 1)); scrub.value = String(cursor); paint(); }
-  function paint() {
-    stepLabel.textContent = cursor === 0 ? "before the first step"
-      : "step " + cursor + " / " + maxSteps;
-    runs.forEach(function (r) {
-      r.nodes.forEach(function (m, i) {
-        var on = i < cursor;
-        m.visible = on;
-        if (m.userData.numTag) m.userData.numTag.visible = on;
-      });
-      var t = r.spec._travel;
-      if (t) {
-        var frac = Math.max(0, Math.min(1, (cursor - 1) / Math.max(1, r.nodes.length - 1)));
-        t.line.geometry.setDrawRange(0, Math.max(2, Math.floor(frac * t.count)));
-        t.line.visible = cursor > 1;
-      }
-    });
+  function stop() {
+    playing = false;
+    playBtn.setAttribute("aria-pressed", "false");
+    playBtn.textContent = "▶ Play";
   }
-  scrub.addEventListener("input", function () { cursor = +scrub.value; playing = false; playBtn.setAttribute("aria-pressed", "false"); playBtn.textContent = "▶ Play"; paint(); });
   playBtn.addEventListener("click", function () {
     playing = !playing;
-    if (playing && cursor >= maxSteps) cursor = 0;
+    if (playing && slide >= SLIDES.length - 1) goTo(0);
     playBtn.setAttribute("aria-pressed", String(playing));
     playBtn.textContent = playing ? "❚❚ Pause" : "▶ Play";
-    playT = 0; paint();
+    playT = 0;
   });
+  function setFree(on) {
+    free = on;
+    freeBtn.setAttribute("aria-pressed", String(free));
+    if (!free) return;
+    stop();
+    stage({ kind: "compare" });
+    describe({ kind: "compare" });
+    Object.assign(want, HOME);
+    touched = false;
+  }
+  freeBtn.addEventListener("click", function () {
+    setFree(!free);
+    if (!free) goTo(slide);
+  });
+
   addEventListener("keydown", function (e) {
-    if (e.key === "ArrowRight") { setScrub(cursor); }
-    else if (e.key === "ArrowLeft") { setScrub(cursor - 2); }
+    if (e.key === "ArrowRight") { stop(); goTo(slide + 1); }
+    else if (e.key === "ArrowLeft") { stop(); goTo(slide - 1); }
+    else if (e.key === "Home") { stop(); goTo(0); }
+    else if (e.key === "End") { stop(); goTo(SLIDES.length - 1); }
+    else if (e.key === " ") { playBtn.click(); }
     else return;
     e.preventDefault();
   });
 
   document.getElementById("caseline").innerHTML =
     'Case <b>' + esc(DATA.case) + '</b> — expected <b>' + esc(DATA.expected)
-    + '</b>. Same loop, same gate (' + GATE.toFixed(2) + '), same evidence. '
-    + 'Height is confidence; the plane is the gate.';
+    + '</b>. Height is confidence; the plane is the ' + GATE.toFixed(2) + ' gate.';
+
 
   // ---- resize / frame -----------------------------------------------------
   // Place the rings for the shape of the viewport, then pull the camera back
@@ -621,9 +861,12 @@
   function contentBox() {
     var box = new THREE.Box3();
     runs.forEach(function (r) {
-      if (!r.visible) return;
+      if (!r.enabled) return;
+      var was = r.group.visible;
+      r.group.visible = true;
       r.group.updateMatrixWorld(true);
       box.expandByObject(r.group);
+      r.group.visible = was;
     });
     if (box.isEmpty()) box.setFromCenterAndSize(new THREE.Vector3(0, H / 2, 0), new THREE.Vector3(20, H, 20));
     return box;
@@ -634,8 +877,8 @@
     runs.forEach(function (r) {
       var off = RUN_X[r.spec.id] || 0;
       r.group.position.set(portrait ? 0 : off, 0, portrait ? off * 1.25 : 0);
-      r.plates.forEach(function (sp) { sp.visible = !portrait; });
     });
+    isPortrait = portrait;
     HOME.el = portrait ? 0.5 : 0.30;
 
     var box = contentBox();
@@ -657,6 +900,7 @@
     var spanH = Math.max(size.x, pw) / 2 + 1.5;
     var spanV = (size.y + size.z * Math.sin(HOME.el)) / 2 + 1.5;
     HOME.dist = Math.max(spanH / halfH, spanV / halfV) * 1.06;
+    LABEL_REF = HOME.dist;
 
     // The centre of the box is not the centre of the picture: perspective tilts
     // the floor toward the viewer, so the drawing sits lower on screen than its
@@ -715,14 +959,16 @@
   var touched = false;
   addEventListener("resize", function () {
     resize();
-    // Respect a viewer who has already flown somewhere; otherwise re-fit.
-    if (!touched) {
-      ["dist", "el", "tx", "ty", "tz"].forEach(function (k) { want[k] = HOME[k]; });
+    if (free) {
+      if (!touched) ["dist", "el", "tx", "ty", "tz"].forEach(function (k) { want[k] = HOME[k]; });
+    } else {
+      goTo(slide);
     }
   });
   resize();
-  ["dist", "el", "tx", "ty", "tz"].forEach(function (k) { want[k] = view[k] = HOME[k]; });
-  paint();
+  goTo(0);
+  // Open already framed rather than flying in from the default view.
+  ["az", "el", "dist", "tx", "ty", "tz"].forEach(function (k) { view[k] = want[k]; });
 
   function damp(a, b, lambda, dt) { return b + (a - b) * Math.exp(-lambda * dt); }
   var clock = new THREE.Clock(), tmpV = new THREE.Vector3();
@@ -743,26 +989,29 @@
 
     if (playing) {
       playT += dt;
-      if (playT > (reduced ? 0.25 : 0.85)) {
+      if (playT > (reduced ? 0.7 : 3.1)) {
         playT = 0;
-        cursor = cursor >= maxSteps ? maxSteps : cursor + 1;
-        scrub.value = String(cursor);
-        paint();
-        if (cursor >= maxSteps) {
-          playing = false;
-          playBtn.setAttribute("aria-pressed", "false");
-          playBtn.textContent = "▶ Play";
-        }
+        if (slide >= SLIDES.length - 1) stop(); else goTo(slide + 1);
       }
     }
 
-    // The pinned or hovered node breathes, so the panel's subject is obvious.
-    var focus = pinned || hovered;
+    // Whatever the panel is describing stands slightly proud of the rest.
+    var focus = hovered || slideNode();
     runs.forEach(function (r) {
       r.nodes.forEach(function (m) {
         var target = m === focus ? 1.42 : 1;
         m.scale.setScalar(damp(m.scale.x, target, 9, dt));
       });
+    });
+
+    markFocus(focus);
+
+    // Type keeps its size on screen however close the camera gets.
+    LABELS.forEach(function (sp) {
+      if (!sp.visible) return;
+      var k = sp.getWorldPosition(tmpV).distanceTo(camera.position) / LABEL_REF;
+      var base = sp.userData.baseScale;
+      sp.scale.set(base.x * k, base.y * k, 1);
     });
 
     // Keep the gate tag legible from wherever the viewer has flown to.
