@@ -16,6 +16,24 @@ that test left behind and decides whether the system actually behaved correctly.
 Nobody writes prose. Every answer is a choice from a list with a probability
 attached, so every branch is ordinary code reading an enumerated value.
 
+## Author and origin
+
+Created by [Sasha](https://github.com/SashaSkind). I started this project from my
+own work on speech-to-text proxy and licensing QA, where checking the state left
+behind by a test matters as much as its assertions. Beyond Green asks whether
+that follow-up investigation can become a repeatable part of the test workflow.
+
+I supplied the QA context, chose the TypeSafe and W&B integrations, and directed
+the progression from captured examples to a report-only wrapper for my test
+project. I used Codex and Claude Code for research, implementation, testing,
+documentation, and UI iteration. The repository records the resulting code,
+experiments, and limitations so the work can be inspected.
+
+The central lesson has been that typed answers make model decisions usable in
+code, while explicit contracts, evidence collection, and clean controls determine
+whether those decisions deserve trust. The held-out failure and provider
+integration findings are part of that lesson.
+
 ## The loop
 
 ```mermaid
