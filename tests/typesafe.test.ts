@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { normalizedConfidence } from "../src/investigation/choice-response.ts";
 import test from "node:test";
 
 import { createTypeSafeJudge } from "../src/investigation/typesafe.ts";
@@ -211,4 +212,23 @@ test("TypeSafe still rejects a choice far below the reported maximum", async () 
   const response = roundedResponse({ unknown: 0.2, suspected_violation: 0.7, consistent: 0.1 }, "unknown");
   const judge = createTypeSafeJudge({ apiKey: "test-key", fetch: async () => Response.json(response) });
   await assert.rejects(judge(null, scoutQuestions), { message: "TypeSafe returned an invalid response" });
+});
+
+// The gate has to mean the same thing whichever provider answered, so the
+// scale it reads is derived from the distribution rather than taken on trust.
+test("normalised confidence measures the margin above chance, not the top probability", () => {
+  // A three-way split barely above chance is barely confident, even at p=0.44.
+  assert.equal(normalizedConfidence({ refuted: 0.27, insufficient: 0.29, supported: 0.44 }).toFixed(2), "0.16");
+  // The same top probability over two options is further above chance.
+  assert.equal(normalizedConfidence({ sufficient: 0.44, insufficient: 0.56 }).toFixed(2), "0.12");
+  // Certainty and chance pin the ends of the scale.
+  assert.equal(normalizedConfidence({ a: 1, b: 0, c: 0 }), 1);
+  assert.equal(normalizedConfidence({ a: 0.5, b: 0.5 }), 0);
+});
+
+test("normalised confidence stays inside 0..1 for a degenerate distribution", () => {
+  assert.equal(normalizedConfidence({ only: 1 }), 0);
+  assert.equal(normalizedConfidence({}), 0);
+  // Rounding can push a reported maximum a hair past one; the scale still holds.
+  assert.equal(normalizedConfidence({ a: 1.01, b: 0 }), 1);
 });

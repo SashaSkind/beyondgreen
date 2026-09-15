@@ -34,6 +34,16 @@
   .info{position:fixed;z-index:3;top:1.1rem;right:1.1rem;width:20.5rem;max-width:calc(100vw - 2.2rem);
     padding:.85rem .95rem;max-height:calc(100vh - 2.2rem);overflow-y:auto}
   .info .lede{font-size:.85rem;color:var(--text);margin:.3rem 0 .75rem}
+  .info .lede a{color:var(--primary)}
+  table.rec{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:.72rem;
+    margin:.2rem 0 .7rem}
+  table.rec th,table.rec td{text-align:left;padding:.3rem .8rem .3rem 0;
+    border-bottom:1px solid var(--border)}
+  table.rec th{font-size:.62rem;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);font-weight:400}
+  table.rec .n{text-align:right;font-variant-numeric:tabular-nums}
+  table.rec td.ok{color:var(--primary)}
+  table.rec tr>*:last-child{padding-right:0}
   .cmp{display:grid;gap:.75rem;margin:.35rem 0 .3rem}
   .pbar{position:fixed;left:0;top:0;height:2px;width:100%;z-index:4;pointer-events:none}
   .pbar span{display:block;height:100%;width:0;background:var(--primary);transition:width .4s ease}
@@ -145,6 +155,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="loop-data.js"></script>
+<script src="findings-data.js"></script>
 <script>
 (function () {
   "use strict";
@@ -593,6 +604,7 @@
     SLIDES.push({ kind: "outcome", run: r });
   });
   SLIDES.push({ kind: "compare" });
+  if (window.FINDINGS) SLIDES.push({ kind: "record" });
 
   var slide = 0, playing = false, playT = 0, free = false, isPortrait = false;
 
@@ -606,6 +618,32 @@
         + 'plane is the bar a <i>supported</i> claim has to clear.</p>'
         + '<p class="lede">Step forward to walk both runs, one judgment at a time.</p>';
     }
+    if (s.kind === "record") {
+      var F = window.FINDINGS;
+      var html = '<h2>Across every run</h2>'
+        + '<p class="sub">' + F.policies.reduce(function (n, x) { return n + x.runs; }, 0)
+        + ' suite runs &middot; ' + F.policies[0].total + ' cases each</p>'
+        + '<p class="lede">This deck walks one case. The record it sits in:</p>'
+        + '<table class="rec"><thead><tr><th>policy</th><th class="n">correct</th>'
+        + '<th class="n">wrong</th><th class="n">latency</th></tr></thead><tbody>';
+      F.policies.forEach(function (x) {
+        var wrong = x.falsePositive + x.falseNegative;
+        html += '<tr><td>' + esc(x.policy) + '</td>'
+          + '<td class="n">' + esc(x.correct) + '/' + x.total + '</td>'
+          + '<td class="n' + (wrong === 0 ? ' ok' : '') + '">' + wrong + '</td>'
+          + '<td class="n">' + x.latencySeconds[0].toFixed(1)
+          + (x.latencySeconds[1] - x.latencySeconds[0] > 0.05
+              ? '\u2013' + x.latencySeconds[1].toFixed(1) : '') + 's</td></tr>';
+      });
+      html += '</tbody></table>'
+        + '<p class="lede">No policy ever returned a wrong verdict — no false positives, no '
+        + 'false negatives. Where TypeSafe could not establish a case it declined to answer, in '
+        + 'about a twentieth of the time the escalated tier takes.</p>'
+        + '<p class="lede">One caveat we found late: the two providers report '
+        + '<i>confidence</i> on different scales, so this single threshold was a stricter bar '
+        + 'for TypeSafe than for DeepSeek. <a href="findings.html">The measurements are here</a>.</p>';
+      return html;
+    }
     if (s.kind === "compare") {
       var html = '<h2>What the bar bought</h2><div class="cmp">';
       runs.forEach(function (r) {
@@ -615,7 +653,8 @@
           + '<div class="meta"><span>took <b>' + (sp.latencyMs / 1000).toFixed(1) + 's</b></span>'
           + '<span>out <b>' + num(sp.usage.outputTokens) + '</b> tok</span></div></div>';
       });
-      return html + '</div><p class="lede">' + esc(compareLine()) + '</p>';
+      return html + '</div><p class="lede">' + esc(compareLine()) + '</p>'
+        + '<p class="lede">That is this one case. The next slide has the record across every run.</p>';
     }
     var sp = s.run.spec;
     if (s.kind === "run") {
@@ -659,6 +698,7 @@
     }
     infoKicker.textContent = s.kind === "intro" ? "Inside the loop"
       : s.kind === "compare" ? "Side by side"
+      : s.kind === "record" ? "The whole record"
       : s.kind === "run" ? "The run" : "Outcome";
     infoBody.innerHTML = slideHtml(s);
   }
@@ -704,7 +744,7 @@
   }
 
   function goalFor(s) {
-    if (s.kind === "intro" || s.kind === "compare") {
+    if (s.kind === "intro" || s.kind === "compare" || s.kind === "record") {
       return { az: HOME.az, el: HOME.el, dist: HOME.dist, tx: HOME.tx, ty: HOME.ty, tz: HOME.tz };
     }
     var at = s.run.group.position;

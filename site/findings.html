@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Notes on jev-1.13.0</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#fbfaf7;--surface:#ffffff;--sunk:#f2f1ec;--text:#1a201d;--muted:#5d6b64;
+    --border:#dcdcd4;--rule:#e8e7e0;--accent:#1f6b53;--warn:#8a6100;--warnbg:#fdf6e6;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--sans:"Source Sans 3",system-ui,sans-serif}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1513;--surface:#151e1a;--sunk:#121a17;--text:#eef4f1;--muted:#93a69d;
+      --border:#27332e;--rule:#1e2a25;--accent:#5fb397;--warn:#d3a63f;--warnbg:#1d1a10}}
+  :root[data-theme="dark"]{
+    --bg:#0e1513;--surface:#151e1a;--sunk:#121a17;--text:#eef4f1;--muted:#93a69d;
+    --border:#27332e;--rule:#1e2a25;--accent:#5fb397;--warn:#d3a63f;--warnbg:#1d1a10}
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;padding-block:3.2rem 5rem;padding-left:1.25rem;padding-right:1.25rem}
+
+  .kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 .6rem}
+  h1{font-size:clamp(1.7rem,4.4vw,2.3rem);line-height:1.18;margin:0 0 .5rem;letter-spacing:-.018em;
+    text-wrap:balance;font-weight:650}
+  .standfirst{font-size:1.04rem;color:var(--muted);margin:0 0 1.1rem;max-width:54ch}
+  .meta{font-family:var(--mono);font-size:.72rem;color:var(--muted);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:.6rem 0;margin:0 0 2.6rem}
+
+  h2{font-size:1.24rem;margin:2.9rem 0 .2rem;letter-spacing:-.012em;font-weight:650;text-wrap:balance}
+  h2 .n{font-family:var(--mono);font-size:.7rem;color:var(--accent);display:block;
+    letter-spacing:.16em;text-transform:uppercase;margin-bottom:.3rem;font-weight:400}
+  h3{font-size:.95rem;margin:1.7rem 0 .35rem;font-weight:650}
+  p{margin:0 0 .95rem}
+  .lead{font-size:1.02rem}
+  a{color:var(--accent)}
+  strong{font-weight:650}
+  code{font-family:var(--mono);font-size:.86em;background:var(--sunk);
+    padding:.1em .34em;border-radius:4px}
+  pre{font-family:var(--mono);font-size:.78rem;line-height:1.65;background:var(--sunk);
+    border:1px solid var(--rule);border-radius:8px;padding:.85rem 1rem;overflow-x:auto;margin:0 0 1.1rem}
+  pre code{background:none;padding:0;font-size:inherit}
+
+  table{border-collapse:collapse;width:100%;font-size:.84rem;margin:0 0 1.1rem}
+  .scroll{overflow-x:auto;margin:0 0 1.1rem}
+  .scroll table{margin:0}
+  th,td{text-align:left;padding:.42rem .7rem .42rem 0;border-bottom:1px solid var(--rule);
+    vertical-align:baseline}
+  thead th{font-family:var(--mono);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);font-weight:400;white-space:nowrap}
+  td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;
+    padding-right:1.1rem;white-space:nowrap}
+  tr>th:last-child,tr>td:last-child{padding-right:0}
+  tbody tr:last-child td{border-bottom:0}
+  .yes{color:var(--accent)}
+  .no{color:var(--muted)}
+
+  .note{border-left:3px solid var(--warn);background:var(--warnbg);border-radius:0 8px 8px 0;
+    padding:.8rem 1rem;margin:0 0 1.2rem}
+  .note p:last-child{margin:0}
+  .note .lab{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--warn);display:block;margin-bottom:.3rem}
+
+  footer{margin-top:3.4rem;padding-top:1.1rem;border-top:1px solid var(--rule);
+    font-size:.84rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="kicker">Beyond&nbsp;Green · integration notes</p>
+<h1>Two notes on <code>jev-1.13.0</code></h1>
+<p class="standfirst">Both turned up while wiring the typed-choice API into a post-test
+investigation loop. Both are measured from recorded responses, not inferred.</p>
+<p class="meta" id="provenance">—</p>
+
+<p class="lead">We run a five-role investigation loop over CI results: a Scout proposes, a Critic
+attacks and picks what evidence to read, an Investigator revises, and a Verifier rules. Each role
+is one <code>POST /v1/systemone</code> call with a JSON state and a set of closed questions. The
+loop only concludes when a Critic marks the case <code>supported</code> at or above a confidence
+threshold, with every required source retrieved.</p>
+
+<p>Across the runs behind this note, <span id="answerCount">—</span> answers came back from
+<code>jev-1.13.0</code>. Two things in them are worth passing on. The first is a small
+interoperability trap. The second changed how we read our own benchmark, and it is the reason
+we are writing.</p>
+
+<h2><span class="n">Note one</span>Two-decimal distributions do not always sum to 1.00</h2>
+
+<p>Probabilities come back rounded to two decimals, so a well-formed distribution can miss 1.00 by
+a rounding unit. In our sample that is <span id="sumOff">—</span>:</p>
+
+<div class="scroll"><table id="sumTable">
+  <thead><tr><th>Model</th><th class="n">Answers</th><th class="n">Sum 1.00</th><th class="n">Sum 0.99</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<p>Every deviation we recorded is <strong>downward</strong>. We have not seen a sum above 1.00:</p>
+<pre id="sumExamples"><code>—</code></pre>
+
+<p>This matters only if the client validates strictly. Ours did, with a <code>0.001</code>
+tolerance, and rejected those responses as malformed. The symptom was an intermittent
+&ldquo;invalid response&rdquo; on roughly one call in a hundred, which is an unpleasant thing to
+chase because retrying usually works. The fix on our side was to size the tolerance to the
+rounding rather than to zero — with <var>n</var> values each carrying at most half a unit of
+error, <code>n &times; 0.005</code>:</p>
+
+<pre><code>const roundingUnit = 0.01;
+const sumTolerance = (options) =&gt; options * (roundingUnit / 2) + Number.EPSILON;</code></pre>
+
+<p>Nothing here needs fixing at your end if the two-decimal rounding is deliberate. It would help
+to state the convention in the docs, since the natural client-side check is equality to 1.</p>
+
+<h2><span class="n">Note two</span><code>confidence</code> is a margin, not a probability</h2>
+
+<p>The <code>confidence</code> field is not the probability of the chosen option. Against the
+recorded answers it matches the chosen option&rsquo;s distance above chance, normalised to 0..1:</p>
+
+<pre><code>confidence = (p_max &minus; 1/n) / (1 &minus; 1/n)</code></pre>
+
+<p>On a real Scout answer — <code>{consistent: 0.17, suspected_violation: 0.25, unknown: 0.58}</code>
+— that gives <code>(0.58 &minus; ⅓) / (⅔) = 0.37</code>, which is what came back. Classifying
+every answer by which formula it matches:</p>
+
+<div class="scroll"><table id="formulaTable">
+  <thead><tr><th>Model</th><th class="n">Answers</th><th class="n">Margin only</th><th class="n">Top probability only</th><th class="n">Both</th><th class="n">Neither</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<p>&ldquo;Both&rdquo; is where the two formulas nearly coincide, which happens as the top
+probability approaches 1. &ldquo;Neither&rdquo; is mostly two-decimal rounding at the margins. The
+split is unambiguous in the columns that separate them: for <code>jev-1.13.0</code> the
+top-probability-only count is <span id="pmaxOnly">—</span>.</p>
+
+<p>This is a reasonable definition — arguably a better one, since it says how much better than
+guessing the answer is, which is what a gate usually wants to know. The problem is only that it
+differs from the other provider we run, which reports the top probability directly. Our threshold
+was a single number applied to both.</p>
+
+<h3>What that cost us</h3>
+
+<p>A threshold of <span id="gateNum">0.80</span> is a different bar on each scale. To clear it:</p>
+
+<div class="scroll"><table>
+  <thead><tr><th>Options</th><th class="n">Needs p_max (margin scale)</th><th class="n">Needs p_max (top-probability scale)</th></tr></thead>
+  <tbody>
+    <tr><td>2</td><td class="n">0.900</td><td class="n">0.800</td></tr>
+    <tr><td>3</td><td class="n">0.867</td><td class="n">0.800</td></tr>
+    <tr><td>4</td><td class="n">0.850</td><td class="n">0.800</td></tr>
+  </tbody>
+</table></div>
+
+<p>So <code>jev-1.13.0</code> was held to a materially stricter standard than the model we were
+comparing it against, by a threshold we thought was neutral. Re-scoring every gate decision in the
+recorded runs on a common scale, <span id="rescore">—</span> differ — and all of them are the same
+model on the same case, each one an assessment our gate rejected that a top-probability gate would
+have accepted:</p>
+
+<div class="scroll"><table id="flipTable">
+  <thead><tr><th>Case</th><th>Role</th><th>Choice</th><th class="n">Reported</th><th class="n">p_max</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<p>Looking at every run that gave up because the Critic was never convinced, and the last
+<code>supported</code> assessment it made before giving up:</p>
+
+<div class="scroll"><table id="boundaryTable">
+  <thead><tr><th>Case</th><th class="n">Reported</th><th class="n">p_max</th><th>Our gate</th><th>Top-probability gate</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<p id="boundarySummary">—</p>
+
+<div class="note">
+  <span class="lab">What this does not show</span>
+  <p>That those runs would have reached a correct verdict. Clearing the Critic&rsquo;s gate only
+  lets the loop continue to the Verifier, which holds an independent veto and was never reached in
+  any of them. We have not re-run the suite on a common scale, so the outcome is unknown rather
+  than favourable. The honest claim is narrower: on this case the abstentions sit inside the gap
+  between the two conventions, so they are partly an artefact of our threshold rather than a limit
+  of the model.</p>
+</div>
+
+<h2><span class="n">For context</span>The record these notes come from</h2>
+
+<p>Six seeded cases on an open-source bookmark manager, each a real state mutation behind a
+passing UI test. Every policy was repeated; the ranges below are across repeats.</p>
+
+<div class="scroll"><table id="policyTable">
+  <thead><tr><th>Policy</th><th class="n">Runs</th><th class="n">Correct</th><th class="n">Wrong</th><th class="n">Abstained</th><th class="n">Mean latency</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<p id="recordNote">—</p>
+
+<p>The column worth dwelling on is <strong>Wrong</strong>. Across every run of every policy the
+loop never produced an incorrect verdict — no false positives and no false negatives. Where
+<code>jev-1.13.0</code> could not establish a case it declined to answer, which is the behaviour
+we wanted and the reason it is the first tier in our cascade. Note two is about the threshold we
+set, not about that behaviour.</p>
+
+<h2><span class="n">Reproducing</span>Everything above from the receipts</h2>
+
+<p>Each number on this page is generated from recorded API responses, not typed in:</p>
+
+<pre><code>npm run report     # rewrites site/findings-data.js from the receipts
+npm run demo:typesafe   # one policy end to end</code></pre>
+
+<p>The scale check is <code>scripts/provider-report.ts</code>; the tolerance change is
+<code>src/investigation/choice-response.ts</code>. Full source and the step-by-step traces are at
+<a href="https://github.com/SashaSkind/safeci">github.com/SashaSkind/safeci</a>, and the loop is
+walkable step by step at <a href="loop.html">the trace viewer</a>.</p>
+
+<footer>
+  <p>Beyond Green · <a href="index.html">project</a> · <a href="loop.html">trace viewer</a> ·
+  <a href="v3.html">presentation</a></p>
+</footer>
+
+</div>
+
+<script src="findings-data.js"></script>
+<script>
+(function () {
+  "use strict";
+  var F = window.FINDINGS;
+  if (!F) return;
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/[&<>]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+  function rows(table, list) {
+    $(table).querySelector("tbody").innerHTML = list.join("");
+  }
+
+  var ts = F.sums.filter(function (s) { return s.model.indexOf("jev") === 0; })[0];
+  var tsF = F.formula.filter(function (s) { return s.model.indexOf("jev") === 0; })[0];
+
+  $("provenance").textContent = F.generatedFrom + " recorded suite runs · gate "
+    + F.gate.toFixed(2) + " · generated by scripts/provider-report.ts";
+  $("answerCount").textContent = ts ? ts.answers.toLocaleString() : "—";
+  $("gateNum").textContent = F.gate.toFixed(2);
+
+  rows("sumTable", F.sums.map(function (s) {
+    return '<tr><td><code>' + esc(s.model) + '</code></td>'
+      + '<td class="n">' + s.answers + '</td>'
+      + '<td class="n">' + (s.sums["1.00"] || 0) + '</td>'
+      + '<td class="n">' + (s.sums["0.99"] || 0) + '</td></tr>';
+  }));
+  if (ts) {
+    var off = ts.answers - (ts.sums["1.00"] || 0);
+    $("sumOff").textContent = off + " of " + ts.answers + " answers ("
+      + (off / ts.answers * 100).toFixed(1) + "%)";
+    $("sumExamples").innerHTML = "<code>" + ts.examples.map(function (e) {
+      return esc(e.role + " · " + e.question + "  sums to " + e.total + "\n  "
+        + JSON.stringify(e.probabilities));
+    }).join("\n\n") + "</code>";
+  }
+
+  rows("formulaTable", F.formula.map(function (f) {
+    return '<tr><td><code>' + esc(f.model) + '</code></td>'
+      + '<td class="n">' + f.answers + '</td>'
+      + '<td class="n">' + f.marginOnly + '</td>'
+      + '<td class="n">' + f.pmaxOnly + '</td>'
+      + '<td class="n">' + f.both + '</td>'
+      + '<td class="n">' + f.neither + '</td></tr>';
+  }));
+  if (tsF) $("pmaxOnly").textContent = tsF.pmaxOnly + " of " + tsF.answers;
+
+  $("rescore").textContent = F.rescore.flips + " of " + F.rescore.evaluations + " decisions";
+  rows("flipTable", F.rescore.detail.map(function (d) {
+    return '<tr><td><code>' + esc(d.caseId) + '</code></td><td>' + esc(d.role) + '</td>'
+      + '<td><code>' + esc(d.choice) + '</code></td>'
+      + '<td class="n">' + d.reported.toFixed(2) + '</td>'
+      + '<td class="n">' + d.pmax.toFixed(2) + '</td></tr>';
+  }));
+
+  rows("boundaryTable", F.boundaries.map(function (b) {
+    return '<tr><td><code>' + esc(b.caseId) + '</code></td>'
+      + '<td class="n">' + b.reported.toFixed(2) + '</td>'
+      + '<td class="n">' + b.pmax.toFixed(2) + '</td>'
+      + '<td class="' + (b.passesReported ? "yes" : "no") + '">'
+      + (b.passesReported ? "passes" : "rejects") + '</td>'
+      + '<td class="' + (b.passesPmax ? "yes" : "no") + '">'
+      + (b.passesPmax ? "passes" : "rejects") + '</td></tr>';
+  }));
+  var would = F.boundaries.filter(function (b) { return !b.passesReported && b.passesPmax; }).length;
+  $("boundarySummary").innerHTML = "Of " + F.boundaries.length + " such abstentions, <strong>"
+    + would + "</strong> would have cleared a top-probability gate at the same number, and "
+    + (F.boundaries.length - would) + " would still have been rejected. "
+    + "The model lands close to the line on this case either way; which side it falls on "
+    + "depends on which convention the threshold is read in.";
+
+  rows("policyTable", F.policies.map(function (p) {
+    var wrong = p.falsePositive + p.falseNegative;
+    return '<tr><td><code>' + esc(p.policy) + '</code></td>'
+      + '<td class="n">' + p.runs + '</td>'
+      + '<td class="n">' + esc(p.correct) + ' / ' + p.total + '</td>'
+      + '<td class="n ' + (wrong === 0 ? "yes" : "") + '">' + wrong + '</td>'
+      + '<td class="n">' + p.abstained + '</td>'
+      + '<td class="n">' + p.latencySeconds[0].toFixed(1)
+      + (p.latencySeconds[1] - p.latencySeconds[0] > 0.05
+          ? "–" + p.latencySeconds[1].toFixed(1) : "") + 's</td></tr>';
+  }));
+
+  var stable = F.policies.filter(function (p) { return p.accuracy.indexOf("identical") === 0; })
+    .map(function (p) { return p.policy; });
+  var varied = F.policies.filter(function (p) { return p.accuracy.indexOf("varied") === 0; })
+    .map(function (p) { return p.policy + " (" + p.runs + " runs)"; });
+  $("recordNote").innerHTML = stable.length
+    ? "Scored the same in every repeat: <code>" + stable.join("</code>, <code>") + "</code>."
+      + (varied.length ? " Varied between repeats: <code>" + varied.join("</code>, <code>")
+        + "</code> — too few runs to read much into." : "")
+    : "";
+})();
+</script>
+</body>
+</html>

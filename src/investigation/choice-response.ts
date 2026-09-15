@@ -8,6 +8,17 @@ const roundingUnit = 0.01;
 // Each rounded value carries at most half a unit of error, so n values carry n/2.
 const sumTolerance = (options: number) => options * (roundingUnit / 2) + Number.EPSILON;
 
+// How far the chosen option sits above chance, on 0..1. Providers disagree on
+// what they call "confidence" — one reports the top probability, another this
+// margin — so a gate that has to mean the same thing across providers should be
+// computed here from the distribution rather than read off the response.
+export function normalizedConfidence(probabilities: Record<string, number>): number {
+  const values = Object.values(probabilities);
+  if (values.length < 2) return 0;
+  const chance = 1 / values.length;
+  return Math.min(1, Math.max(0, (Math.max(...values) - chance) / (1 - chance)));
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

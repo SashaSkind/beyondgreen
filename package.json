@@ -31,7 +31,8 @@
     "demo:typesafe": "node --env-file-if-exists=.env scripts/cascade.ts --policy typesafe",
     "demo:cascade": "node --env-file-if-exists=.env scripts/cascade.ts --policy cascade",
     "demo:deepseek": "node --env-file-if-exists=.env scripts/cascade.ts --policy deepseek",
-    "site:loop-data": "node scripts/loop-data.ts"
+    "site:loop-data": "node scripts/loop-data.ts",
+    "report": "node scripts/provider-report.ts"
   },
   "dependencies": {
     "weave": "^0.16.8"
