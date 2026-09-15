@@ -4,6 +4,8 @@
 
 Your tests passed. We check what they missed.
 
+[![CI](https://github.com/SashaSkind/safeci/actions/workflows/ci.yml/badge.svg)](https://github.com/SashaSkind/safeci/actions/workflows/ci.yml)
+
 **[Open the presentation](https://sashaskind.github.io/safeci/)** ·
 [browse the recorded investigations](https://sashaskind.github.io/safeci/viewer/index.html)
 
@@ -171,6 +173,10 @@ URL. It makes no model calls and uploads no application evidence. `.env` is
 ignored by Git; keep API keys there or in your environment.
 
 Run `npm run check` to type-check the project and `npm test` for local tests.
+GitHub Actions runs these checks and the Chromium browser tests on pushes to
+`main` and on pull requests. The tests use local fixtures and mocked providers;
+they need no API keys or access to the private QA farm. Failed browser runs retain
+traces and screenshots as workflow artifacts for seven days.
 
 Reference: [Weave quickstart](https://docs.wandb.ai/weave/quickstart).
 
