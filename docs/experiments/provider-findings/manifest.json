@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "scope": "Ten completed Linkding policy runs underlying site/findings-data.js. Only final-tier answers are retained in these source receipts.",
+  "files": [
+    {
+      "path": "18133130-2e32-4b96-b442-cf66de6d6c98/cascade.json",
+      "sha256": "af1c927c29dc9a7c429d5965ed3ece94e49f7595b35eb90413a33d21a490caa4",
+      "sourceSha256": "562b1541f9c9090f21092cd8dc9be6704625b24683df3a27906dceb592890fb8"
+    },
+    {
+      "path": "1b5c882e-1bd3-4b40-9820-e37e38ea04c0/cascade.json",
+      "sha256": "dd51a50147a471e90099f0ed694badc0e85467aa1561f5767ca2bb19f75f8a83",
+      "sourceSha256": "f209565df782aa67f337fc74770652ed34a3efe82ec401233b35b1d9fb96f2d5"
+    },
+    {
+      "path": "1d077152-712b-459b-9e2f-44e190500956/cascade.json",
+      "sha256": "7bb4cd011b22df245563e24e847effa0945bf10e740e8a16543b14ed665d5383",
+      "sourceSha256": "f28c60e80588c1c6998ad40f106d9aaf4e89049821a8e07ef0f6ebf2a1457c85"
+    },
+    {
+      "path": "33111c36-0616-434e-ad10-0bba0d70a2c6/cascade.json",
+      "sha256": "132c7e889d51500fcac776ed2adee792a70fe02f953159a6043a68f9ec9a6f3d",
+      "sourceSha256": "e389d5a8d0137803ac83743b9358f04fcad48cc9e38c6aa92553f29d60a0b6b6"
+    },
+    {
+      "path": "40dfd34a-af04-4f21-9a61-0fc28c7b54fb/cascade.json",
+      "sha256": "1ea65f2901f465c9361b1f4aad6a2e81a3d84ef932060aa21f9caafe7c65d521",
+      "sourceSha256": "79f71c2194d50b4db005b342ab0e304868f83a98d3aa45af4140b60a76a61899"
+    },
+    {
+      "path": "94d60473-8381-4aaa-b32c-5ad260cb9b03/cascade.json",
+      "sha256": "fbc048e984a5b005a3e17996cf24b11bd1647b566db7566bbf63a8f61ced2c26",
+      "sourceSha256": "eba0bea8431d874ccddb84fd1df84de92d94cc0a104aca548d4f0514f03a71c3"
+    },
+    {
+      "path": "9a9c7e45-0531-4a67-84dc-35f7dc18b3dc/cascade.json",
+      "sha256": "23c4894dd5dd2c05107906476d9fe2c222f9cce96f5b89a33cacb01005a6f295",
+      "sourceSha256": "2c1fa6075595c8f412b88378a88e69318bb4481475dc51dbef5ad51d94e44446"
+    },
+    {
+      "path": "a31e4e7c-4d93-4256-9614-1073326b50cf/cascade.json",
+      "sha256": "cf03a34442897fdf0c00283b2e6c4cb6c542322c96f58ad5893b48fc3f737e5e",
+      "sourceSha256": "02226c5b96ad1b27c222e85a4620c521ad5839104af7609177a4217e6d488dea"
+    },
+    {
+      "path": "e32d5e79-3e5f-4924-9893-2d7a724df7a0/cascade.json",
+      "sha256": "9fd0e3b51904dd03c2766e26ef9e65e078ac8746169b52e5c0103f0b43c34576",
+      "sourceSha256": "40b84398129f1dd579ab8f68f1a9d1cb7623b3935ea2d8661c49820f72f692fb"
+    },
+    {
+      "path": "f0e7af72-736d-4c7f-a258-de5b99ec5e10/cascade.json",
+      "sha256": "523c9bc65bc1d4bf57b48ac3d9725a5667ece3a95a476ed6a3904e885657da44",
+      "sourceSha256": "6ea0bfba5b61fad080e00856b188d89c28cf983241ebb753cc480cf5c9eb903d"
+    }
+  ]
+}

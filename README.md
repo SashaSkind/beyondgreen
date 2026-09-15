@@ -90,6 +90,18 @@ invariants that protect these results. The
 original spec, and [benchmark selection](docs/research/benchmark-selection.md)
 records why Linkding came first and which held-out cases come next.
 
+To reproduce the [provider integration notes](https://sashaskind.github.io/safeci/findings.html)
+from the committed, sanitized receipts:
+
+```sh
+npm run report
+git diff --exit-code -- site/findings-data.js
+```
+
+No API keys or model calls are needed. The
+[input data and provenance](docs/experiments/provider-findings/README.md)
+describe the ten recorded runs, the fields retained, and the limits of the sample.
+
 ## Local investigation viewer
 
 With Node.js 24+, run `npm ci` and `npm run ui`, then open

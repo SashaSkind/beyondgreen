@@ -207,10 +207,20 @@ set, not about that behaviour.</p>
 
 <h2><span class="n">Reproducing</span>Everything above from the receipts</h2>
 
-<p>Each number on this page is generated from recorded API responses, not typed in:</p>
+<p>The public repository includes sanitized inputs from the ten recorded runs.
+From a fresh checkout with Node.js 24 or newer, regenerate this page&rsquo;s data
+without API keys or model calls:</p>
 
-<pre><code>npm run report     # rewrites site/findings-data.js from the receipts
-npm run demo:typesafe   # one policy end to end</code></pre>
+<pre><code>npm ci
+npm run report
+git diff --exit-code -- site/findings-data.js</code></pre>
+
+<p>The final command checks an exact match against the published data.
+The <a href="https://github.com/SashaSkind/safeci/tree/main/docs/experiments/provider-findings">input receipts and provenance</a>
+retain the recorded choices, confidence values, distributions, outcomes, and timings.
+Answer statistics cover each run&rsquo;s final tier; the original cascade receipts
+omit earlier-tier answers. Running a new model investigation is a separate,
+billable workflow described in the repository.</p>
 
 <p>The scale check is <code>scripts/provider-report.ts</code>; the tolerance change is
 <code>src/investigation/choice-response.ts</code>. Full source and the step-by-step traces are at

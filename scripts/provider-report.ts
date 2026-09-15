@@ -6,11 +6,12 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { createHash } from "node:crypto";
 import { normalizedConfidence } from "../src/investigation/choice-response.ts";
 
 const { values } = parseArgs({
   options: {
-    dir: { type: "string", default: ".scratch/cascades" },
+    dir: { type: "string", default: "docs/experiments/provider-findings" },
     gate: { type: "string", default: "0.8" },
     out: { type: "string", default: "site/findings-data.js" },
   },
@@ -24,6 +25,7 @@ type Row = {
   totalLatencyMs: number; final: { reason: string; steps: Step[] };
 };
 type Report = {
+  complete?: boolean;
   policy?: string; escalateOn?: string[]; rows?: Row[];
   summary?: {
     total: number; correct: number; meanLatencyMs: number;
@@ -32,11 +34,28 @@ type Report = {
 };
 
 const reports: Report[] = [];
-for (const entry of await readdir(values.dir!)) {
+type Manifest = { schemaVersion: number; files: { path: string; sha256: string }[] };
+let manifest: Manifest | null = null;
+try {
+  manifest = JSON.parse(await readFile(join(values.dir!, "manifest.json"), "utf8"));
+} catch (error) {
+  if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT")) throw error;
+}
+if (manifest) {
+  if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.files) || !manifest.files.length) throw new Error("Invalid findings manifest");
+  for (const file of manifest.files) {
+    if (!/^[a-f\d-]+\/cascade\.json$/.test(file.path) || !/^[a-f\d]{64}$/.test(file.sha256)) throw new Error("Invalid findings manifest entry");
+    const bytes = await readFile(join(values.dir!, file.path));
+    if (createHash("sha256").update(bytes).digest("hex") !== file.sha256) throw new Error(`Findings receipt checksum mismatch: ${file.path}`);
+    const parsed = JSON.parse(bytes.toString()) as Report;
+    if (parsed.complete !== true || !parsed.policy || !parsed.rows || !parsed.summary) throw new Error(`Incomplete findings receipt: ${file.path}`);
+    reports.push(parsed);
+  }
+} else for (const entry of (await readdir(values.dir!)).sort()) {
   const path = join(values.dir!, entry, "cascade.json");
   try {
     const parsed = JSON.parse(await readFile(path, "utf8")) as Report;
-    if (parsed.policy && parsed.rows && parsed.summary) reports.push(parsed);
+    if (parsed.complete === true && parsed.policy && parsed.rows && parsed.summary) reports.push(parsed);
   } catch { /* not a completed cascade receipt */ }
 }
 if (!reports.length) throw new Error(`No completed cascade receipts under ${values.dir}`);

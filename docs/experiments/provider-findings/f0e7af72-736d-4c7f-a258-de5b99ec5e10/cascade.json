@@ -1,0 +1,907 @@
+{
+ "cascadeId": "f0e7af72-736d-4c7f-a258-de5b99ec5e10",
+ "suiteSha256": "28f1d32322b2998e8b567c29303a448d6545b2f6d1b7617f4698b68cbadde7dd",
+ "policy": "deepseek",
+ "complete": true,
+ "summary": {
+  "total": 6,
+  "correct": 5,
+  "meanLatencyMs": 109918.91470816666,
+  "confusion": {
+   "truePositive": 3,
+   "falsePositive": 0,
+   "trueNegative": 2,
+   "falseNegative": 0,
+   "abstainedRegression": 1,
+   "abstainedClean": 0
+  }
+ },
+ "rows": [
+  {
+   "caseId": "clean_archive",
+   "expected": "clean",
+   "verdict": "clean",
+   "escalations": 0,
+   "totalLatencyMs": 66885.763625,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.75,
+         "probabilities": {
+          "consistent": 0.2,
+          "suspected_violation": 0.05,
+          "unknown": 0.75
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.98,
+         "probabilities": {
+          "supported": 0.01,
+          "refuted": 0.01,
+          "insufficient": 0.98
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.7,
+         "probabilities": {
+          "database_state": 0.55,
+          "operation_contract": 0.35,
+          "known_good_run": 0.05,
+          "none": 0.05
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "consistent",
+         "confidence": 0.9,
+         "probabilities": {
+          "consistent": 0.9,
+          "suspected_violation": 0.03,
+          "unknown": 0.07
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.85,
+         "probabilities": {
+          "supported": 0.12,
+          "refuted": 0.03,
+          "insufficient": 0.85
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.96,
+         "probabilities": {
+          "operation_contract": 0.96,
+          "known_good_run": 0.03,
+          "none": 0.01
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "consistent",
+         "confidence": 0.98,
+         "probabilities": {
+          "consistent": 0.98,
+          "suspected_violation": 0.01,
+          "unknown": 0.01
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.98,
+         "probabilities": {
+          "supported": 0.98,
+          "refuted": 0.01,
+          "insufficient": 0.01
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.96,
+         "probabilities": {
+          "known_good_run": 0.04,
+          "none": 0.96
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "verdict": {
+         "choice": "clean",
+         "confidence": 0.98,
+         "probabilities": {
+          "regression": 0.01,
+          "clean": 0.98,
+          "insufficient": 0.01
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 0.98,
+         "probabilities": {
+          "sufficient": 0.98,
+          "insufficient": 0.02
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_deletes_bookmark",
+   "expected": "regression",
+   "verdict": "regression",
+   "escalations": 0,
+   "totalLatencyMs": 68672.61750000001,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.85,
+         "probabilities": {
+          "consistent": 0.1,
+          "suspected_violation": 0.05,
+          "unknown": 0.85
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.9,
+         "probabilities": {
+          "supported": 0.05,
+          "refuted": 0.05,
+          "insufficient": 0.9
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.75,
+         "probabilities": {
+          "database_state": 0.2,
+          "operation_contract": 0.75,
+          "known_good_run": 0.03,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.7,
+         "probabilities": {
+          "consistent": 0.15,
+          "suspected_violation": 0.25,
+          "unknown": 0.6
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.9,
+         "probabilities": {
+          "supported": 0.05,
+          "refuted": 0.05,
+          "insufficient": 0.9
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.95,
+         "probabilities": {
+          "database_state": 0.95,
+          "known_good_run": 0.03,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.97,
+         "probabilities": {
+          "consistent": 0.01,
+          "suspected_violation": 0.98,
+          "unknown": 0.01
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.97,
+         "probabilities": {
+          "supported": 0.97,
+          "refuted": 0.01,
+          "insufficient": 0.02
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.98,
+         "probabilities": {
+          "known_good_run": 0.02,
+          "none": 0.98
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "verdict": {
+         "choice": "regression",
+         "confidence": 0.98,
+         "probabilities": {
+          "regression": 0.98,
+          "clean": 0.01,
+          "insufficient": 0.01
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 0.99,
+         "probabilities": {
+          "sufficient": 0.99,
+          "insufficient": 0.01
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_toggles_unread",
+   "expected": "regression",
+   "verdict": "insufficient",
+   "escalations": 0,
+   "totalLatencyMs": 216822.920375,
+   "final": {
+    "reason": "model_error",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.75,
+         "probabilities": {
+          "consistent": 0.15,
+          "suspected_violation": 0.1,
+          "unknown": 0.75
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.96,
+         "probabilities": {
+          "supported": 0.02,
+          "refuted": 0.02,
+          "insufficient": 0.96
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.7,
+         "probabilities": {
+          "database_state": 0.7,
+          "operation_contract": 0.25,
+          "known_good_run": 0.03,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_clears_tags",
+   "expected": "regression",
+   "verdict": "regression",
+   "escalations": 0,
+   "totalLatencyMs": 157342.68666600005,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.9,
+         "probabilities": {
+          "consistent": 0.07,
+          "suspected_violation": 0.03,
+          "unknown": 0.9
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.95,
+         "probabilities": {
+          "supported": 0.03,
+          "refuted": 0.05,
+          "insufficient": 0.92
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.6,
+         "probabilities": {
+          "database_state": 0.38,
+          "operation_contract": 0.55,
+          "known_good_run": 0.05,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.85,
+         "probabilities": {
+          "consistent": 0.15,
+          "suspected_violation": 0.05,
+          "unknown": 0.8
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.9,
+         "probabilities": {
+          "supported": 0.05,
+          "refuted": 0.05,
+          "insufficient": 0.9
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.95,
+         "probabilities": {
+          "database_state": 0.95,
+          "known_good_run": 0.03,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.94,
+         "probabilities": {
+          "consistent": 0.02,
+          "suspected_violation": 0.94,
+          "unknown": 0.04
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.96,
+         "probabilities": {
+          "supported": 0.96,
+          "refuted": 0.01,
+          "insufficient": 0.03
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.95,
+         "probabilities": {
+          "known_good_run": 0.05,
+          "none": 0.95
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "verdict": {
+         "choice": "regression",
+         "confidence": 0.97,
+         "probabilities": {
+          "regression": 0.97,
+          "clean": 0.02,
+          "insufficient": 0.01
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 0.99,
+         "probabilities": {
+          "sufficient": 0.99,
+          "insufficient": 0.01
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_changes_other_owner",
+   "expected": "regression",
+   "verdict": "regression",
+   "escalations": 0,
+   "totalLatencyMs": 88625.399125,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.75,
+         "probabilities": {
+          "consistent": 0.2,
+          "suspected_violation": 0.05,
+          "unknown": 0.75
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.95,
+         "probabilities": {
+          "supported": 0.02,
+          "refuted": 0.01,
+          "insufficient": 0.97
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.65,
+         "probabilities": {
+          "database_state": 0.35,
+          "operation_contract": 0.6,
+          "known_good_run": 0.03,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.85,
+         "probabilities": {
+          "consistent": 0.1,
+          "suspected_violation": 0.05,
+          "unknown": 0.85
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.97,
+         "probabilities": {
+          "supported": 0.02,
+          "refuted": 0.01,
+          "insufficient": 0.97
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.98,
+         "probabilities": {
+          "database_state": 0.98,
+          "known_good_run": 0.01,
+          "none": 0.01
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.9,
+         "probabilities": {
+          "consistent": 0.05,
+          "suspected_violation": 0.9,
+          "unknown": 0.05
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.95,
+         "probabilities": {
+          "supported": 0.95,
+          "refuted": 0.02,
+          "insufficient": 0.03
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.98,
+         "probabilities": {
+          "known_good_run": 0.02,
+          "none": 0.98
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "verdict": {
+         "choice": "regression",
+         "confidence": 0.97,
+         "probabilities": {
+          "regression": 0.97,
+          "clean": 0.02,
+          "insufficient": 0.01
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 0.98,
+         "probabilities": {
+          "sufficient": 0.98,
+          "insufficient": 0.02
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_refresh_control",
+   "expected": "clean",
+   "verdict": "clean",
+   "escalations": 0,
+   "totalLatencyMs": 61164.10095799994,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.85,
+         "probabilities": {
+          "consistent": 0.1,
+          "suspected_violation": 0.05,
+          "unknown": 0.85
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.95,
+         "probabilities": {
+          "supported": 0.03,
+          "refuted": 0.02,
+          "insufficient": 0.95
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.55,
+         "probabilities": {
+          "database_state": 0.4,
+          "operation_contract": 0.55,
+          "known_good_run": 0.03,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.7,
+         "probabilities": {
+          "consistent": 0.25,
+          "suspected_violation": 0.05,
+          "unknown": 0.7
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.9,
+         "probabilities": {
+          "supported": 0.05,
+          "refuted": 0.05,
+          "insufficient": 0.9
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.95,
+         "probabilities": {
+          "database_state": 0.95,
+          "known_good_run": 0.03,
+          "none": 0.02
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "hypothesis": {
+         "choice": "consistent",
+         "confidence": 0.98,
+         "probabilities": {
+          "consistent": 0.98,
+          "suspected_violation": 0.01,
+          "unknown": 0.01
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.99,
+         "probabilities": {
+          "supported": 0.99,
+          "refuted": 0.005,
+          "insufficient": 0.005
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.99,
+         "probabilities": {
+          "known_good_run": 0.01,
+          "none": 0.99
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+       "answers": {
+        "verdict": {
+         "choice": "clean",
+         "confidence": 0.98,
+         "probabilities": {
+          "regression": 0,
+          "clean": 0.99,
+          "insufficient": 0.01
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 0.98,
+         "probabilities": {
+          "sufficient": 0.99,
+          "insufficient": 0.01
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

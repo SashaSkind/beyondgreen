@@ -1,0 +1,967 @@
+{
+ "cascadeId": "94d60473-8381-4aaa-b32c-5ad260cb9b03",
+ "suiteSha256": "28f1d32322b2998e8b567c29303a448d6545b2f6d1b7617f4698b68cbadde7dd",
+ "policy": "typesafe",
+ "complete": true,
+ "summary": {
+  "total": 6,
+  "correct": 4,
+  "meanLatencyMs": 4589.610027666667,
+  "confusion": {
+   "truePositive": 2,
+   "falsePositive": 0,
+   "trueNegative": 2,
+   "falseNegative": 0,
+   "abstainedRegression": 2,
+   "abstainedClean": 0
+  }
+ },
+ "rows": [
+  {
+   "caseId": "clean_archive",
+   "expected": "clean",
+   "verdict": "clean",
+   "escalations": 0,
+   "totalLatencyMs": 5634.2721249999995,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.37,
+         "probabilities": {
+          "consistent": 0.2,
+          "suspected_violation": 0.22,
+          "unknown": 0.58
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.89,
+         "probabilities": {
+          "supported": 0.01,
+          "refuted": 0.07,
+          "insufficient": 0.92
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.44,
+         "probabilities": {
+          "database_state": 0.58,
+          "operation_contract": 0.21,
+          "known_good_run": 0.02,
+          "none": 0.19
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "consistent",
+         "confidence": 0.63,
+         "probabilities": {
+          "consistent": 0.75,
+          "suspected_violation": 0.05,
+          "unknown": 0.2
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.62,
+         "probabilities": {
+          "supported": 0.75,
+          "refuted": 0.02,
+          "insufficient": 0.23
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.56,
+         "probabilities": {
+          "operation_contract": 0.71,
+          "known_good_run": 0.01,
+          "none": 0.28
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "consistent",
+         "confidence": 1,
+         "probabilities": {
+          "consistent": 1,
+          "suspected_violation": 0,
+          "unknown": 0
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 1,
+         "probabilities": {
+          "supported": 1,
+          "refuted": 0,
+          "insufficient": 0
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.98,
+         "probabilities": {
+          "known_good_run": 0.01,
+          "none": 0.99
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "verdict": {
+         "choice": "clean",
+         "confidence": 0.99,
+         "probabilities": {
+          "regression": 0,
+          "clean": 1,
+          "insufficient": 0
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 1,
+         "probabilities": {
+          "sufficient": 1,
+          "insufficient": 0
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_deletes_bookmark",
+   "expected": "regression",
+   "verdict": "regression",
+   "escalations": 0,
+   "totalLatencyMs": 4704.276791,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.56,
+         "probabilities": {
+          "consistent": 0.23,
+          "suspected_violation": 0.07,
+          "unknown": 0.7
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.89,
+         "probabilities": {
+          "supported": 0.01,
+          "refuted": 0.06,
+          "insufficient": 0.93
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.36,
+         "probabilities": {
+          "database_state": 0.53,
+          "operation_contract": 0.21,
+          "known_good_run": 0.02,
+          "none": 0.24
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.53,
+         "probabilities": {
+          "consistent": 0.15,
+          "suspected_violation": 0.69,
+          "unknown": 0.16
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.4,
+         "probabilities": {
+          "supported": 0.61,
+          "refuted": 0.16,
+          "insufficient": 0.23
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.71,
+         "probabilities": {
+          "operation_contract": 0.8,
+          "known_good_run": 0.02,
+          "none": 0.18
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.98,
+         "probabilities": {
+          "consistent": 0.01,
+          "suspected_violation": 0.99,
+          "unknown": 0
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.9,
+         "probabilities": {
+          "supported": 0.9299999999999999,
+          "refuted": 0.06,
+          "insufficient": 0.01
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.93,
+         "probabilities": {
+          "known_good_run": 0.04,
+          "none": 0.96
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "verdict": {
+         "choice": "regression",
+         "confidence": 0.97,
+         "probabilities": {
+          "regression": 0.98,
+          "clean": 0.02,
+          "insufficient": 0
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 0.99,
+         "probabilities": {
+          "sufficient": 0.99,
+          "insufficient": 0.01
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_toggles_unread",
+   "expected": "regression",
+   "verdict": "insufficient",
+   "escalations": 0,
+   "totalLatencyMs": 4160.436167,
+   "final": {
+    "reason": "critic_unconvinced",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.37,
+         "probabilities": {
+          "consistent": 0.15,
+          "suspected_violation": 0.27,
+          "unknown": 0.58
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.91,
+         "probabilities": {
+          "supported": 0.01,
+          "refuted": 0.05,
+          "insufficient": 0.94
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.46,
+         "probabilities": {
+          "database_state": 0.59,
+          "operation_contract": 0.21,
+          "known_good_run": 0.02,
+          "none": 0.18
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.34,
+         "probabilities": {
+          "consistent": 0.22,
+          "suspected_violation": 0.56,
+          "unknown": 0.22
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.12,
+         "probabilities": {
+          "supported": 0.37,
+          "refuted": 0.22,
+          "insufficient": 0.41
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.72,
+         "probabilities": {
+          "operation_contract": 0.81,
+          "known_good_run": 0.02,
+          "none": 0.17
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.83,
+         "probabilities": {
+          "consistent": 0.11,
+          "suspected_violation": 0.89,
+          "unknown": 0
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.66,
+         "probabilities": {
+          "supported": 0.77,
+          "refuted": 0.22,
+          "insufficient": 0.01
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.95,
+         "probabilities": {
+          "known_good_run": 0.03,
+          "none": 0.97
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_clears_tags",
+   "expected": "regression",
+   "verdict": "regression",
+   "escalations": 0,
+   "totalLatencyMs": 4496.223666999998,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.37,
+         "probabilities": {
+          "consistent": 0.19,
+          "suspected_violation": 0.23,
+          "unknown": 0.58
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.88,
+         "probabilities": {
+          "supported": 0.01,
+          "refuted": 0.07,
+          "insufficient": 0.92
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.48,
+         "probabilities": {
+          "database_state": 0.61,
+          "operation_contract": 0.17,
+          "known_good_run": 0.02,
+          "none": 0.2
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.52,
+         "probabilities": {
+          "consistent": 0.16,
+          "suspected_violation": 0.68,
+          "unknown": 0.16
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.19,
+         "probabilities": {
+          "supported": 0.46,
+          "refuted": 0.27,
+          "insufficient": 0.27
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.69,
+         "probabilities": {
+          "operation_contract": 0.79,
+          "known_good_run": 0.02,
+          "none": 0.19
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.97,
+         "probabilities": {
+          "consistent": 0.02,
+          "suspected_violation": 0.98,
+          "unknown": 0
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.9,
+         "probabilities": {
+          "supported": 0.93,
+          "refuted": 0.06,
+          "insufficient": 0.01
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.94,
+         "probabilities": {
+          "known_good_run": 0.03,
+          "none": 0.97
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "verdict": {
+         "choice": "regression",
+         "confidence": 0.97,
+         "probabilities": {
+          "regression": 0.98,
+          "clean": 0.02,
+          "insufficient": 0
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 0.98,
+         "probabilities": {
+          "sufficient": 0.99,
+          "insufficient": 0.01
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_changes_other_owner",
+   "expected": "regression",
+   "verdict": "insufficient",
+   "escalations": 0,
+   "totalLatencyMs": 4145.040874999999,
+   "final": {
+    "reason": "critic_unconvinced",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.38,
+         "probabilities": {
+          "consistent": 0.13,
+          "suspected_violation": 0.28,
+          "unknown": 0.59
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.89,
+         "probabilities": {
+          "supported": 0.01,
+          "refuted": 0.07,
+          "insufficient": 0.92
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.47,
+         "probabilities": {
+          "database_state": 0.6,
+          "operation_contract": 0.22,
+          "known_good_run": 0.02,
+          "none": 0.16
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.39,
+         "probabilities": {
+          "consistent": 0.25,
+          "suspected_violation": 0.59,
+          "unknown": 0.16
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "refuted",
+         "confidence": 0.09,
+         "probabilities": {
+          "supported": 0.3,
+          "refuted": 0.39,
+          "insufficient": 0.31
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.71,
+         "probabilities": {
+          "operation_contract": 0.81,
+          "known_good_run": 0.01,
+          "none": 0.18
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "suspected_violation",
+         "confidence": 0.6,
+         "probabilities": {
+          "consistent": 0.27,
+          "suspected_violation": 0.73,
+          "unknown": 0
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "refuted",
+         "confidence": 0.41,
+         "probabilities": {
+          "supported": 0.38,
+          "refuted": 0.61,
+          "insufficient": 0.01
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.93,
+         "probabilities": {
+          "known_good_run": 0.04,
+          "none": 0.96
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "caseId": "archive_refresh_control",
+   "expected": "clean",
+   "verdict": "clean",
+   "escalations": 0,
+   "totalLatencyMs": 4397.410541000005,
+   "final": {
+    "reason": "verified",
+    "steps": [
+     {
+      "role": "Scout",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "unknown",
+         "confidence": 0.36,
+         "probabilities": {
+          "consistent": 0.15,
+          "suspected_violation": 0.28,
+          "unknown": 0.57
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "insufficient",
+         "confidence": 0.9,
+         "probabilities": {
+          "supported": 0.01,
+          "refuted": 0.06,
+          "insufficient": 0.93
+         }
+        },
+        "next_evidence": {
+         "choice": "database_state",
+         "confidence": 0.53,
+         "probabilities": {
+          "database_state": 0.65,
+          "operation_contract": 0.18,
+          "known_good_run": 0.02,
+          "none": 0.15
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "consistent",
+         "confidence": 0.6,
+         "probabilities": {
+          "consistent": 0.73,
+          "suspected_violation": 0.05,
+          "unknown": 0.22
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 0.61,
+         "probabilities": {
+          "supported": 0.74,
+          "refuted": 0.03,
+          "insufficient": 0.23
+         }
+        },
+        "next_evidence": {
+         "choice": "operation_contract",
+         "confidence": 0.68,
+         "probabilities": {
+          "operation_contract": 0.79,
+          "known_good_run": 0,
+          "none": 0.21
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Investigator",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "hypothesis": {
+         "choice": "consistent",
+         "confidence": 1,
+         "probabilities": {
+          "consistent": 1,
+          "suspected_violation": 0,
+          "unknown": 0
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Critic",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "assessment": {
+         "choice": "supported",
+         "confidence": 1,
+         "probabilities": {
+          "supported": 1,
+          "refuted": 0,
+          "insufficient": 0
+         }
+        },
+        "next_evidence": {
+         "choice": "none",
+         "confidence": 0.98,
+         "probabilities": {
+          "known_good_run": 0.01,
+          "none": 0.99
+         }
+        }
+       }
+      }
+     },
+     {
+      "role": "Verifier",
+      "judgment": {
+       "model": "jev-1.13.0",
+       "answers": {
+        "verdict": {
+         "choice": "clean",
+         "confidence": 0.99,
+         "probabilities": {
+          "regression": 0.01,
+          "clean": 0.99,
+          "insufficient": 0
+         }
+        },
+        "grounding": {
+         "choice": "sufficient",
+         "confidence": 1,
+         "probabilities": {
+          "sufficient": 1,
+          "insufficient": 0
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}
